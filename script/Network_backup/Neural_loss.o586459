@@ -1,0 +1,15 @@
+/users/PAS1495/amedina/work/project/script/Network
+
+-----------------------
+Resources requested:
+nodes=4:ppn=40:gpus=2
+-----------------------
+Resources used:
+cput=134:51:15
+walltime=06:10:36
+mem=151.627GB
+vmem=160.244GB
+-----------------------
+Resource units charged (estimate):
+98.826 RUs
+-----------------------

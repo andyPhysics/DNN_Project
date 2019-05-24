@@ -1,0 +1,7 @@
+import: unable to open X server `' @ error/import.c/ImportImageCommand/369.
+import: unable to open X server `' @ error/import.c/ImportImageCommand/369.
+import: unable to open X server `' @ error/import.c/ImportImageCommand/369.
+/var/spool/torque/mom_priv/jobs/591077.pitzer-batch.ten.osc.edu.SC: line 20: from: command not found
+/var/spool/torque/mom_priv/jobs/591077.pitzer-batch.ten.osc.edu.SC: line 22: from: command not found
+/var/spool/torque/mom_priv/jobs/591077.pitzer-batch.ten.osc.edu.SC: line 25: syntax error near unexpected token `output_file'
+/var/spool/torque/mom_priv/jobs/591077.pitzer-batch.ten.osc.edu.SC: line 25: `output_file = 'test6.h5''
