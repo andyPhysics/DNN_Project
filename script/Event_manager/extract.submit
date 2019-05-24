@@ -1,0 +1,14 @@
+# file name: job.condor
+Executable = /home/amedina/DNN_Project/extract_data_updated.py
+
+output = extract.out
+error = extract.err
+log = job.log
+notification = never
+
+# use the current metaproject environment
+getenv = True
+
+arguments = $(Item)
+
+queue 1 Item from arguments.txt
