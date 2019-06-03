@@ -1,8 +1,0 @@
-/home/amedina/DNN_Project/create_images.py:49: PerformanceWarning: indexing past lexsort depth may impact performance.
-  my_data = np.array(data.loc[event_number,feature])
-/home/amedina/DNN_Project/create_images.py:49: PerformanceWarning: indexing past lexsort depth may impact performance.
-  my_data = np.array(data.loc[event_number,feature])
-/home/amedina/DNN_Project/create_images.py:49: PerformanceWarning: indexing past lexsort depth may impact performance.
-  my_data = np.array(data.loc[event_number,feature])
-/home/amedina/DNN_Project/create_images.py:49: PerformanceWarning: indexing past lexsort depth may impact performance.
-  my_data = np.array(data.loc[event_number,feature])
