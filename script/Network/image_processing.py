@@ -7,8 +7,8 @@ from I3Hexagon import I3Hexagon
 from create_images import *
 import h5py
 
-file_path = '/data/user/amedina/DNN/'
-y = os.listdir(file_path+'data')
+file_path = '/fs/scratch/PAS1495/amedina/'
+y = os.listdir(file_path+'images')
 file_names = []
 for i in y:
     file_name,file_extension = os.path.splitext(i)
@@ -18,7 +18,7 @@ image_files = []
 label_files= []
 
 for i in file_names:
-    image_files.append(file_path+'data/'+i+'.hdf5')
+    image_files.append(file_path+'images/'+i+'.hdf5')
     label_files.append(file_path+'labels/'+i+'_labels.hdf5')
 
 number = range(len(image_files))
