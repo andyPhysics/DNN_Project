@@ -8,7 +8,7 @@ K.tensorflow_backend._get_available_gpus()
 
 output_file = 'test6.h5'
 output_best = 'test_best6.h5'
-file_path = '/fs/scratch/PAS1495/amedina/'
+file_path = '/data/user/amedina/DNN/'
 y = os.listdir(file_path+'processed_new')
 
 file_names = []
