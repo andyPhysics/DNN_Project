@@ -4,7 +4,7 @@
 
 #PBS -l walltime=24:00:00
 
-#PBS -l nodes=1:ppn=40:gpus=2
+#PBS -l nodes=1:ppn=40
 
 #PBS -j oe
 
@@ -14,8 +14,6 @@ cd $PBS_O_WORKDIR
 
 echo $PBS_O_WORKDIR
 
-module load python/2.7.5
-
-module load cuda/10.0.130
+module load python/2.7-conda5.2
 
 python -u image_processing.py >&image_output image_output.log

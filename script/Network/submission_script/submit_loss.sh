@@ -4,7 +4,7 @@
 
 #PBS -l walltime=24:00:00
 
-#PBS -l nodes=2:ppn=40:gpus=2
+#PBS -l nodes=2:ppn=40
 
 #PBS -j oe
 
@@ -16,6 +16,4 @@ echo $PBS_O_WORKDIR
 
 module load python/2.7-conda5.2
 
-module load cuda/10.0.130
-
-python -u New_loss.py >&output_regression6 Neural_regression_new_loss.log
+python -u /users/PAS1495/amedina/work/DNN_Project/script/Network/New_loss_test.py >&output_new new.log

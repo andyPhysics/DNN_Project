@@ -1,0 +1,15 @@
+/users/PAS1495/amedina/work/DNN_Project/script/Network/submission_script
+
+-----------------------
+Resources requested:
+nodes=2:ppn=40
+-----------------------
+Resources used:
+cput=00:00:00
+walltime=00:00:02
+mem=0.004GB
+vmem=0.000GB
+-----------------------
+Resource units charged (estimate):
+0.004 RUs
+-----------------------

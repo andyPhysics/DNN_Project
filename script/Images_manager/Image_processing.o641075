@@ -1,0 +1,16 @@
+/users/PAS1495/amedina/work/DNN_Project/script/Images_manager
+
+-----------------------
+Resources requested:
+nodes=1:ppn=40
+mem=190440mb
+-----------------------
+Resources used:
+cput=10:11:45
+walltime=00:15:36
+mem=2.384GB
+vmem=82.445GB
+-----------------------
+Resource units charged (estimate):
+1.040 RUs
+-----------------------

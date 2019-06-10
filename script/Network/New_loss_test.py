@@ -1,20 +1,22 @@
 import numpy as np
 import pandas as pd
 import sys,os
-from create_images import entire_image
 
 from keras import backend as K
 K.tensorflow_backend._get_available_gpus()
 
 output_file = 'gpu_test.h5'
 output_best = 'gpu_test_best.h5'
-file_path = 'C:\\Users\\Andres Medina\\Desktop\\DNN_Project\\data\\'
+file_path = '/fs/scratch/PAS1495/amedina/processed_new/'
 y = os.listdir(file_path)
 
 file_names = []
 
 for i in y:
     file_names.append(file_path+i)
+
+file_names_batched = list(np.array_split(file_names,5))
+
 images = []
 labels = []
 
@@ -37,7 +39,7 @@ def get_feature(labels,feature):
     feature_values = np.array(feature_values)
     return feature_values
 
-images,labels = load_files([file_names[0]])
+images,labels = load_files(file_names_batched[0])
 
 zenith_values = get_feature(labels,1)
 azimuth_values = get_feature(labels,2)
@@ -85,8 +87,8 @@ from keras.layers import LeakyReLU
 from keras import regularizers
 
 model = Sequential()
-batch_size = 2
-epochs=100
+batch_size = 128
+epochs=10
 
 img_rows, img_cols = 300,342
 input_shape = (img_rows, img_cols)
@@ -152,9 +154,9 @@ model.fit(x_train, y_train,
 
 model.save(output_file)
 
-for i in file_names:
+for i in file_names_batched[1:len(file_names_batched)]:
 	model = load_model(output_best,custom_objects={'loss_space_angle':loss_space_angle})
-	images,labels = load_files([i])
+	images,labels = load_files(i)
 	zenith_values = get_feature(labels,1)
 	cos_zenith_values = np.cos(zenith_values)
 

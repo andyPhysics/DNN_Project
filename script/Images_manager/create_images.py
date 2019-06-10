@@ -52,6 +52,25 @@ def tile(data,event_number,feature):
     image = np.vstack(image)
     return image
 
+def tile3D(data,event_number,feature):
+    x = I3Hexagon()
+    x.initiate_array()
+    y = []
+    input_data = np.array(data.loc[event_number,feature])
+    if feature in [0,1,2]:
+        my_data = min_max(log_function(input_data))
+    else:
+        my_data = min_max(input_data)
+    count = 0
+    for data in my_data:
+        x.fill_array(data[0:78])
+        y.append(x.end_array)
+        x.reset_array()
+    new_y = np.array(y)
+    image = np.array(new_y)
+    return image
+
+
 def entire_image(data,event_number):
     x = range(0,9)
     image = []
@@ -70,7 +89,34 @@ def entire_image(data,event_number):
     new_image = np.array(new_image)
     new_image = np.vstack(new_image)
     return np.array(new_image)
+
+def init_list_of_objects(size):
+    list_of_objects = list()
+    for i in range(0,size):
+        list_of_objects.append( list() ) #different object reference each time
+    return list_of_objects
         
+def entire_image_3D(data,event_number):
+    x = range(0,9)
+    image = []
+    for i in x:
+        tile_preprocessed = tile3D(data,event_number,i)
+        tile_done = tile_preprocessed
+        image.append(tile_done)
+    new_image = init_list_of_objects(60)
+    for i in new_image:
+        i+=init_list_of_objects(10)
+    for i in new_image:
+        for j in i:
+            j+=init_list_of_objects(19)
+
+    for m in image:
+        for j in range(len(m)):
+            for k in range(len(m[0])):
+                for l in range(len(m[0][0])):
+                    new_image[j][k][l].append(m[j][k][l])
+    new_image = np.array(new_image)
+    return new_image
        
 
 

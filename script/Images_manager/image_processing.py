@@ -32,8 +32,8 @@ def image_processing(i):
     file2 = pd.read_hdf(i[1])
     x = list(set(zip(*list(file1.index))[0]))
     for j in x:
-        list_of_images[j] = [entire_image(file1,j),np.array(file2.loc[int(filter(str.isdigit, j))-1])]
-    np.save(file_path+'processed_new/'+'images_%s.npy'%(i[2]),list_of_images)
+        list_of_images[j] = [entire_image_3D(file1,j),np.array(file2.loc[int(filter(str.isdigit, j))-1])]
+    np.save(file_path+'processed_3D/'+'images_%s.npy'%(i[2]),list_of_images)
 
 import multiprocessing
 from multiprocessing import Pool
