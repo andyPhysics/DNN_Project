@@ -7,6 +7,7 @@ def load_files(batch):
     labels = []
     for i in batch:
         x = np.load(i,allow_pickle=True,encoding='latin1').item()
+        print("Loading file: %s"%(i))
         keys = x.keys()
         for key in keys:
             images.append(x[key][0])
@@ -62,11 +63,16 @@ class Data_generator(Sequence):
     def __data_generation(self,self_IDs_temp):
         images,labels = load_files(self_IDs_temp)
         zenith_values = get_feature(labels,1)
-        azimuth_values = get_feature(labels,1)
+        azimuth_values = get_feature(labels,2)
         cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values)
         cos_values = np.array(list(zip(cos1,cos2,cos3)))
-            
-        return images,cos_values
+        
+        cos_values1 = np.zeros([len(cos_values),len(cos_values[0])])                                                                                         
+        for i in range(len(cos_values)):                                                                                                             
+            for j in range(len(cos_values[0])):                                                                                                      
+                cos_values1[i][j]=(cos_values[i][j] + 1.0)/2.0  
+    
+        return images,cos_values1
 
     
 
