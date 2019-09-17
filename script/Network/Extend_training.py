@@ -14,19 +14,19 @@ from keras.layers import SeparableConv2D, MaxPooling2D, GaussianNoise
 from sklearn.model_selection import train_test_split
 from keras.layers import LeakyReLU
 from keras import regularizers
-from Data_generator import *
+from Data_generator_no import *
 
 num_cpus = 3
 
-output_file = '/data/user/amedina/SWNN_simple_all_test_sigmoid.h5'
-output_best = '/data/user/amedina/SWNN_best_simple_up_sigmoid.h5'
-cnn_model_name = '/data/user/amedina/cnn_model_simple_all_test_sigmoid.h5'
+output_file = '/data/user/amedina/test.h5'
+output_best = '/data/user/amedina/test.h5'
+input_cnn = '/data/user/amedina/DNN/models/cnn_model_simple.h5'
 file_path_test = '/data/user/amedina/DNN/processed_simple/test/'
 file_path_train = '/data/user/amedina/DNN/processed_simple/train/'
-training_output = '/data/user/amedina/training_curve_sigmoid.csv'
+training_output = '/data/user/amedina/test.csv'
 
 def loss_space_angle(y_true,y_pred):
-    y_true1 = y_true*2.0-1.0                                                                                                                         
+    y_true1 = y_true*2.0-1.0                                
     y_pred1 = y_pred*2.0-1.0 
     subtraction = tf.math.subtract(y_true1,y_pred1)
     y = tf.matrix_diag_part(K.dot(subtraction,K.transpose(subtraction)))
@@ -57,32 +57,7 @@ feature_number = 9
 
 #------------------------------------------------------------------------------------------
 
-model1_input = Input(shape=(feature_number,img_heights,img_rows))
-
-model1 = LeakyReLU(alpha = 0.01)(model1_input)
-output1 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model1)
-model1 = SeparableConv2D(32,kernel,padding='same',kernel_regularizer=regularizers.l2(0.01),data_format='channels_first')(output1)
-
-model1 = LeakyReLU(alpha = 0.01)(model1)
-output2 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model1)
-model1 = SeparableConv2D(32,kernel,padding='same',kernel_regularizer=regularizers.l2(0.01),data_format='channels_first')(output2)
-
-model1 = LeakyReLU(alpha = 0.01)(model1)
-output3 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model1)
-model1 = SeparableConv2D(32,kernel,padding='same',kernel_regularizer=regularizers.l2(0.01),data_format='channels_first')(output3)
-
-cnn_model1 = Flatten()(model1_input)
-cnn_model2 = Flatten()(model1)
-cnn_model3 = Flatten()(output1)
-cnn_model4 = Flatten()(output2)
-cnn_model5 = Flatten()(output3)
-cnn_model = Concatenate(axis=-1)([cnn_model1,cnn_model2,cnn_model3,cnn_model4,cnn_model5])
-
-cnn_model = Model(inputs=model1_input,outputs=cnn_model)
-opt = keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5, amsgrad=False)
-cnn_model.compile(optimizer=opt , loss = loss_space_angle)
-
-#---------------------------------------------------------------------------------------------
+cnn_model = load_model(input_cnn,custom_objects={'loss_space_angle':loss_space_angle})
 
 input_new = Input(shape=(feature_number,img_heights,img_rows))
 
@@ -103,16 +78,16 @@ model = Model(inputs=input_new,outputs=predictions)
 opt = keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5, amsgrad=False)
 model.compile(optimizer=opt , loss = loss_space_angle)
 
-history = model.fit_generator(Data_generator(file_path_train,4),
+history = model.fit_generator(Data_generator(file_path_train,4,percent=0.01),
                               epochs = epochs,
-                              validation_data=Data_generator(file_path_test,4),
+                              validation_data=Data_generator(file_path_test,4,percent=0.01),
                               workers = num_cpus,
                               use_multiprocessing = True)
 
 training = zip(history.history['loss'],history.history['val_loss'])
 
 
-cnn_model.save(cnn_model_name)
+cnn_model.save(input_cnn)
 model.save(output_file)
 np.savetxt(training_output,training,delimiter=',')
 

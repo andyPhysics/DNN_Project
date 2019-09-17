@@ -14,37 +14,21 @@ from keras.layers import SeparableConv2D, MaxPooling2D, GaussianNoise
 from sklearn.model_selection import train_test_split
 from keras.layers import LeakyReLU
 from keras import regularizers
-from Data_generator import *
+from Data_generator_energy import *
 
 num_cpus = 3
 
-output_file = '/data/user/amedina/SWNN_simple_all_test_sigmoid.h5'
-output_best = '/data/user/amedina/SWNN_best_simple_up_sigmoid.h5'
-cnn_model_name = '/data/user/amedina/cnn_model_simple_all_test_sigmoid.h5'
+output_file = '/data/user/amedina/Energy.h5'
+cnn_model_name = '/data/user/amedina/cnn_energy.h5'
 file_path_test = '/data/user/amedina/DNN/processed_simple/test/'
 file_path_train = '/data/user/amedina/DNN/processed_simple/train/'
-training_output = '/data/user/amedina/training_curve_sigmoid.csv'
-
-def loss_space_angle(y_true,y_pred):
-    y_true1 = y_true*2.0-1.0                                                                                                                         
-    y_pred1 = y_pred*2.0-1.0 
-    subtraction = tf.math.subtract(y_true1,y_pred1)
-    y = tf.matrix_diag_part(K.dot(subtraction,K.transpose(subtraction)))
-    loss = tf.math.reduce_mean(y)
-    return loss
+training_output = '/data/user/amedina/training_curve_energy.csv'
 
 early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                               min_delta=0,
                               patience=10,
                               verbose=1, mode='auto')
 
-best_model = keras.callbacks.ModelCheckpoint(output_best,
-                                             monitor='val_loss',
-                                             verbose=0,
-                                             save_best_only=True,
-                                             save_weights_only=False,
-                                             mode='auto',
-                                             period=1)
 
 epochs=50
 
@@ -80,7 +64,7 @@ cnn_model = Concatenate(axis=-1)([cnn_model1,cnn_model2,cnn_model3,cnn_model4,cn
 
 cnn_model = Model(inputs=model1_input,outputs=cnn_model)
 opt = keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5, amsgrad=False)
-cnn_model.compile(optimizer=opt , loss = loss_space_angle)
+cnn_model.compile(optimizer=opt , loss = 'mse')
 
 #---------------------------------------------------------------------------------------------
 
@@ -97,11 +81,11 @@ model = LeakyReLU(alpha = 0.01)(model)
 input_new_prime = Flatten()(input_new)
 model = Concatenate(axis=-1)([model, input_new_prime])
 
-predictions = Dense(3,activation='sigmoid')(model)
+predictions = Dense(1)(model)
 
 model = Model(inputs=input_new,outputs=predictions)
 opt = keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5, amsgrad=False)
-model.compile(optimizer=opt , loss = loss_space_angle)
+model.compile(optimizer=opt , loss = 'mse')
 
 history = model.fit_generator(Data_generator(file_path_train,4),
                               epochs = epochs,

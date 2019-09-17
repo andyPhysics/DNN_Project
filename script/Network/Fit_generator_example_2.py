@@ -14,21 +14,19 @@ from keras.layers import SeparableConv2D, MaxPooling2D, GaussianNoise
 from sklearn.model_selection import train_test_split
 from keras.layers import LeakyReLU
 from keras import regularizers
-from Data_generator import *
+from Data_generator_tanh import *
 
 num_cpus = 3
 
-output_file = '/data/user/amedina/SWNN_simple_all_test_sigmoid.h5'
-output_best = '/data/user/amedina/SWNN_best_simple_up_sigmoid.h5'
-cnn_model_name = '/data/user/amedina/cnn_model_simple_all_test_sigmoid.h5'
+output_file = '/data/user/amedina/SWNN_simple_all_test_tanh.h5'
+output_best = '/data/user/amedina/SWNN_best_simple_up_tanh.h5'
+cnn_model_name = '/data/user/amedina/cnn_model_simple_all_test_tanh.h5'
 file_path_test = '/data/user/amedina/DNN/processed_simple/test/'
 file_path_train = '/data/user/amedina/DNN/processed_simple/train/'
-training_output = '/data/user/amedina/training_curve_sigmoid.csv'
+training_output = '/data/user/amedina/training_curve_tanh.csv'
 
 def loss_space_angle(y_true,y_pred):
-    y_true1 = y_true*2.0-1.0                                                                                                                         
-    y_pred1 = y_pred*2.0-1.0 
-    subtraction = tf.math.subtract(y_true1,y_pred1)
+    subtraction = tf.math.subtract(y_true,y_pred)
     y = tf.matrix_diag_part(K.dot(subtraction,K.transpose(subtraction)))
     loss = tf.math.reduce_mean(y)
     return loss
@@ -97,7 +95,7 @@ model = LeakyReLU(alpha = 0.01)(model)
 input_new_prime = Flatten()(input_new)
 model = Concatenate(axis=-1)([model, input_new_prime])
 
-predictions = Dense(3,activation='sigmoid')(model)
+predictions = Dense(3,activation='tanh')(model)
 
 model = Model(inputs=input_new,outputs=predictions)
 opt = keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5, amsgrad=False)
