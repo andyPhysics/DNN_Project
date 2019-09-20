@@ -14,21 +14,73 @@ from keras.layers import SeparableConv2D, MaxPooling2D, GaussianNoise
 from sklearn.model_selection import train_test_split
 from keras.layers import LeakyReLU
 from keras import regularizers
-from Data_generator_energy import *
+from test_generator import *
 import multiprocessing as mp
+import argparse
 
 num_cpus = mp.cpu_count()-1
-epochs=50
-output_file = 'Energy.h5'
-cnn_model_name = 'cnn_energy.h5'
+epochs=2
+Percent_files = .001
+
+parser = argparse.ArgumentParser(description='Process DNN')
+
+parser.add_argument('-a',
+                    dest = 'activation',
+                    default='tanh',
+                    help='Last layer activation')
+
+parser.add_argument('-o',
+                    dest='output_file',
+                    default='model.h5',
+                    help='This is the output model at the end of training(.h5)')
+
+parser.add_argument('-b',
+                    dest='output_best',
+                    default='model_best.h5',
+                    help='This is the best output model(.h5)')
+
+parser.add_argument('-c',
+                    dest='cnn_model',
+                    default='cnn_model.h5',
+                    help='This is the output of the CNN model(.h5)')
+
+parser.add_argument('-t',
+                    dest='training_output',
+                    default='training_curve.csv',
+                    help='This is the output file with the training curve(.csv)')
+
+args = parser.parse_args()
+
 file_path_test = '/data/user/amedina/DNN/processed_simple/test/'
 file_path_train = '/data/user/amedina/DNN/processed_simple/train/'
-training_output = 'training_curve_energy.csv'
+
+
+def loss_space_angle(y_true,y_pred):
+    if args.activation=='sigmoid':
+        y_true1 = y_true*2.0-1.0                     
+        y_pred1 = y_pred*2.0-1.0
+    else:
+        y_true1 = y_true
+        y_pred1 = y_pred
+    subtraction = tf.math.subtract(y_true1,y_pred1)
+    y = tf.matrix_diag_part(K.dot(subtraction,K.transpose(subtraction)))
+    loss = tf.math.reduce_mean(y)
+    return loss
 
 early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                               min_delta=0,
                               patience=10,
                               verbose=1, mode='auto')
+
+best_model = keras.callbacks.ModelCheckpoint(args.output_best,
+                                             monitor='val_loss',
+                                             save_best_only=True,
+                                             save_weights_only=False,
+                                             mode='auto')
+
+
+
+
 
 img_heights,img_rows = 60,86
 
@@ -62,7 +114,7 @@ cnn_model = Concatenate(axis=-1)([cnn_model1,cnn_model2,cnn_model3,cnn_model4,cn
 
 cnn_model = Model(inputs=model1_input,outputs=cnn_model)
 opt = keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5, amsgrad=False)
-cnn_model.compile(optimizer=opt , loss = 'mse')
+cnn_model.compile(optimizer=opt , loss = loss_space_angle)
 
 #---------------------------------------------------------------------------------------------
 
@@ -80,22 +132,22 @@ model = LeakyReLU(alpha = 0.01)(model)
 input_new_prime = Flatten()(input_new)
 model = Concatenate(axis=-1)([model, input_new_prime])
 
-predictions = Dense(1)(model)
+predictions = Dense(3,activation=args.activation)(model)
 
 model = Model(inputs=input_new,outputs=predictions)
 opt = keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5, amsgrad=False)
-model.compile(optimizer=opt , loss = 'mse')
+model.compile(optimizer=opt , loss = loss_space_angle)
 
-history = model.fit_generator(Data_generator(file_path_train,1),
+history = model.fit_generator(Data_generator(file_path_train,1,activation_function=args.activation,Percent =Percent_files),
                               epochs = epochs,
-                              validation_data=Data_generator(file_path_test,4),
+                              validation_data=Data_generator(file_path_test,4,activation_function=args.activation),
                               workers = num_cpus,
+#                              callbacks=[best_model],
                               use_multiprocessing = True)
 
 training = zip(history.history['loss'],history.history['val_loss'])
 
 
-cnn_model.save(cnn_model_name)
-model.save(output_file)
-np.savetxt(training_output,training,delimiter=',')
-
+cnn_model.save(args.cnn_model)
+np.savetxt(args.training_output,training,delimiter=',')
+model.save(args.output_file)

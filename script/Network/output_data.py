@@ -36,12 +36,12 @@ output_best='/home/amedina/DNN_Project/script/Network/SWNN_simple_all_test.h5'
 output_file = 'output_new.csv'
 
 
-file_path = '/data/user/amedina/DNN/'
-y = os.listdir(file_path+'processed_simple')
+file_path = '/data/user/amedina/DNN/processed_simple/validation/'
+y = os.listdir(file_path)
 file_names = []
 
 for i in y:
-    file_names.append(file_path+'processed_simple/'+i)
+    file_names.append(file_path+i)
 
 file_names_batched = list(np.array_split(file_names,50))
 
