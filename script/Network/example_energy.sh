@@ -4,8 +4,8 @@ output = energy.out
 error = energy.err
 log = job_3.log
 notification = never
-request_cpus = 3
-request_memory = 8000
+request_cpus = 4
+request_memory = 15000
 
 #arguments = $(Item)
 Requirements = has_avx =?= true
