@@ -7,7 +7,6 @@ def load_files(batch):
     labels = []
     for i in batch:
         x = np.load(i,allow_pickle=True,encoding='latin1').item()
-#        print("Loading file: %s"%(i))
         keys = x.keys()
         for key in keys:
             images.append(x[key][0])
@@ -34,16 +33,18 @@ def get_cos_values(zenith,azimuth):
 
 class Data_generator(Sequence):
 
-    def __init__(self,directory,batch_size,activation_function,Percent=1,shuffle=False):
+    def __init__(self,directory,batch_size,activation_function='sigmoid',percent=1,shuffle=False,first_iter=False,augmentations=None):
         y = os.listdir(directory)
         self.files = []
         for i in y:
             self.files.append(directory+i)
-        self.files = self.files[0:int(np.ceil(len(self.files)*Percent))]
+        self.files = self.files[0:int(np.ceil(len(self.files)*percent))]
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.activation_function = activation_function
         self.on_epoch_end()
+        self.first_iter = first_iter
+        self.augment = augmentations
 
     def __len__(self):
         return int(np.floor(len(self.files)/float(self.batch_size)))
@@ -54,8 +55,9 @@ class Data_generator(Sequence):
         list_IDs_temp = [self.files[k] for k in indexes]
 
         X, Y = self.__data_generation(list_IDs_temp)
-
+        
         return X, Y
+
 
     def on_epoch_end(self):
         self.indexes = np.arange(len(self.files))
@@ -66,19 +68,32 @@ class Data_generator(Sequence):
         images,labels = load_files(self_IDs_temp)
         zenith_values = get_feature(labels,1)
         azimuth_values = get_feature(labels,2)
+        if self.first_iter == True:
+            import random
+            check = list(zip(zenith_values,azimuth_values,images))
+            new_values = []
+            z = max(zenith_values)
+            for i in check:
+                if i[0] > z/2.13:
+                    new_values.append(i)
+                else:
+                    n = abs(np.random.poisson())
+                    if n < 1.0:
+                        new_values.append(i)
+                    else:
+                        continue
+            zenith_values = np.array(list(zip(*new_values))[0])
+            azimuth_values = np.array(list(zip(*new_values))[1])
+            images = np.array(list(zip(*new_values))[2],dtype=np.uint8)
+        azimuth_values_new = [(i-np.pi)/np.pi for i in azimuth_values]
         cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values)
-        cos_values = np.array(list(zip(cos1,cos2,cos3)))
+        cos_values = np.array(list(zip(cos1,cos2,cos3,azimuth_values_new)))
 
-        if self.activation_function == 'sigmoid':
-            cos_values1 = np.zeros([len(cos_values),len(cos_values[0])])                                                                                         
-            for i in range(len(cos_values)):                                                                                                             
-                for j in range(len(cos_values[0])):                                                                                                      
-                    cos_values1[i][j]=(cos_values[i][j] + 1.0)/2.0 
+        return images,cos_values
+        
+        
+        
 
-        else: 
-            cos_values1 = cos_values
-    
-        return images,cos_values1
 
     
 
