@@ -155,5 +155,5 @@ training = zip(history.history['loss'],history.history['val_loss'])
 
 
 cnn_model.save(args.cnn_model)
-np.savetxt(args.training_output,training,delimiter=',')
 model.save(args.output_file)
+np.save(args.training_output,training)
