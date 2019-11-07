@@ -1,5 +1,5 @@
 # file name: job.condor
-Executable = /home/amedina/DNN_Project/script/Network/all.py
+Executable = /home/amedina/DNN_Project.git/trunk/script/Network/all.py
 output = all.out
 error = all.err
 log = all.log

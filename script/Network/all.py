@@ -148,7 +148,7 @@ history = model.fit_generator(Data_generator(file_path_train,2,activation_functi
                               epochs = epochs,
                               validation_data=Data_generator(file_path_test,4,activation_function=args.activation),
                               workers = num_cpus,
-#                              callbacks=[best_model],
+                              callbacks=[best_model],
                               use_multiprocessing = False)
 
 training = zip(history.history['loss'],history.history['val_loss'])

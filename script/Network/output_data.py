@@ -31,9 +31,9 @@ def get_cos_values(zenith,azimuth):
         cos3.append(np.cos(i))
     return np.array(cos1),np.array(cos2),np.array(cos3)
 
-cnn_best = '/home/amedina/DNN_Project/script/Network/cnn_model_simple_all_test.h5'  
-output_best='/home/amedina/DNN_Project/script/Network/SWNN_simple_all_test.h5'
-output_file = 'output_new.csv'
+cnn_best = '/home/amedina/DNN_Project.git/trunk/script/Network/cnn_model_all.h5'  
+output_best='/home/amedina/DNN_Project.git/trunk/script/Network/model_all_best.h5'
+output_file = 'output_new'
 
 
 file_path = '/data/user/amedina/DNN/processed_simple/validation/'
@@ -43,9 +43,9 @@ file_names = []
 for i in y:
     file_names.append(file_path+i)
 
-file_names_batched = list(np.array_split(file_names,50))
+#file_names_batched = list(np.array_split(file_names,50))
 
-images,labels = load_files(file_names_batched[30])
+images,labels = load_files(file_names)
 
 images1 = images[:,:,:,:]
 
@@ -74,7 +74,7 @@ import tensorflow as tf
 from keras import backend as K
 
 def predict_images(model_name,images):
-    model = load_model(model_name,custom_objects={'loss_space_angle':loss_space_angle})
+    model = load_model(model_name)
     predicted_cos_values = model.predict(images)
     return predicted_cos_values
 
@@ -84,13 +84,13 @@ def loss_space_angle(y_true,y_pred):
     loss = tf.math.reduce_mean(y)
     return loss
 
-cnn_model = load_model(cnn_best,custom_objects={'loss_space_angle':loss_space_angle})
-model = load_model(output_best,custom_objects={'cnn_model':cnn_model,'loss_space_angle':loss_space_angle})
+cnn_model = load_model(cnn_best)
+model = load_model(output_best,custom_objects={'cnn_model':cnn_model})
 cos_values_pred = model.predict(new_images)
 
-cos_values_1_1 = [(i*2.0 - 1) for i in list(zip(*cos_values_pred)[0])]
-cos_values_1_2 = [ (i*2.0 -1) for i in list(zip(*cos_values_pred)[1])]
-cos_values_1_3 = [(i*2.0-1) for i in list(zip(*cos_values_pred)[2])]
+cos_values_1_1 = [(i*np.pi + np.pi) for i in list(zip(*cos_values_pred)[0])]
+cos_values_1_2 = [ (i*np.pi + np.pi) for i in list(zip(*cos_values_pred)[1])]
+cos_values_1_3 = [(i*np.pi + np.pi) for i in list(zip(*cos_values_pred)[2])]
 
 cos_values_1=zip(*cos_values)[0]
 cos_values_2=zip(*cos_values)[1]
@@ -127,8 +127,9 @@ def space_angle_error(variable1,variable2):
 
 value1 = zip(cos_values_1,cos_values_2,cos_values_3)
 value2 = zip(cos_values_1_1,cos_values_1_2,cos_values_1_3)
+value1_predicted=value2
 error,mag1,mag2 = space_angle_error(value1,value2)
 
-all_values = zip(new_zenith_values,new_azimuth_values,azimuth_predicted,zenith_predicted,error)
-
-np.savetxt(output_file,all_values,delimiter=',')
+#all_values = zip(new_zenith_values,new_azimuth_values,azimuth_predicted,zenith_predicted,error)
+all_values = zip(value1,value1_predicted,error)
+np.savez(output_file,all_values,delimiter=',')
