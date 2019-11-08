@@ -46,7 +46,7 @@ def get_observable_features(frame):
         observable_features: Observables dictionary
     """
 
-    ice_pulses = dataclasses.I3RecoPulseSeriesMap.from_frame(frame,'InIcePulses')
+    ice_pulses = dataclasses.I3RecoPulseSeriesMap.from_frame(frame,'HLCPulses')
 
 #Look inside ice pulses and get stats on charges and time
     store_string = []
@@ -253,8 +253,8 @@ df1 = pd.DataFrame(labels)
 
 #Save output to hdf5 file
 ## HARDCODED OUTPUT PATH! ##
-output_path = "/data/user/amedina/DNN/" + output_name + ".hdf5"
+output_path = "/data/user/amedina/DNN/data/" + output_name + ".hdf5"
 
 df.to_hdf(output_path, key='df', mode='w')
-df1.to_hdf("/data/user/amedina/DNN/" + output_name + '_labels.hdf5',key='df_labels',mode='w')
+df1.to_hdf("/data/user/amedina/DNN/labels/" + output_name + '_labels.hdf5',key='df_labels',mode='w')
 #data_frame.to_hdf(output_path,format='table',data_columns=True)
