@@ -7,7 +7,7 @@ from I3Hexagon import I3Hexagon
 from create_images import *
 import h5py
 
-file_path = '/fs/scratch/PAS1495/amedina/'
+file_path = '/data/user/amedina/DNN/'
 y = os.listdir(file_path+'images')
 file_names = []
 for i in y:
@@ -32,8 +32,8 @@ def image_processing(i):
     file2 = pd.read_hdf(i[1])
     x = list(set(zip(*list(file1.index))[0]))
     for j in x:
-        list_of_images[j] = [entire_image_3D(file1,j),np.array(file2.loc[int(filter(str.isdigit, j))-1])]
-    np.save(file_path+'processed_3D/'+'images_%s.npy'%(i[2]),list_of_images)
+        list_of_images[j] = [entire_image_simple(file1,j),np.array(file2.loc[int(filter(str.isdigit, j))-1])]
+    np.save(file_path+'processed_simple/'+'images_%s.npy'%(i[2]),list_of_images)
 
 import multiprocessing
 from multiprocessing import Pool

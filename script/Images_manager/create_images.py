@@ -70,6 +70,19 @@ def tile3D(data,event_number,feature):
     image = np.array(new_y)
     return image
 
+def tile_simple(data,event_number_feature):
+    y = []
+    input_data = np.array(data.loc[event_number,feature])
+    if feature in [0,1,2]:
+        my_data = min_max(log_function(input_data))
+    else:
+        my_data = min_max(input_data)
+    for data in my_data:
+        y.append(data)
+    new_y = np.array(y)
+    image = np.array(new_y)
+    return image
+
 
 def entire_image(data,event_number):
     x = range(0,9)
@@ -118,6 +131,27 @@ def entire_image_3D(data,event_number):
     new_image = np.array(new_image)
     return new_image
        
+def entire_image_simple(data,event_number):
+    x = range(0,9)
+    image = []
+    for i in x:
+        tile_preprocessed = tile_simple(data,event_number,i)
+        tile_done = tile_preprocessed
+        image.append(tile_done)
+    new_image = init_list_of_objects(60)
+    for i in new_image:
+        i+=init_list_of_objects(10)
+    for i in new_image:
+        for j in i:
+            j+=init_list_of_objects(19)
+
+    for m in image:
+        for j in range(len(m)):
+            for k in range(len(m[0])):
+                for l in range(len(m[0][0])):
+                    new_image[j][k][l].append(m[j][k][l])
+    new_image = np.array(new_image)
+    return new_image
 
 
 
