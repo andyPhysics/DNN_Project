@@ -126,10 +126,12 @@ cnn_model.compile(optimizer=opt , loss = loss_space_angle)
 #---------------------------------------------------------------------------------------------
 
 input_new = Input(shape=(feature_number,img_heights,img_rows))
+cos_values_line = Input(shape=(3,))
 
 output = Lambda(lambda x: cnn_model(x))(input_new)
 
 model = Dropout(rate=args.do_rate)(output)
+model = Concatenate(axis=-1)([model,cos_values_line])
 model = Dense(512)(model)
 model = ELU()(model)
 model = Dropout(rate=args.do_rate)(model)
@@ -139,9 +141,9 @@ model = ELU()(model)
 input_new_prime = Flatten()(input_new)
 model = Concatenate(axis=-1)([model, input_new_prime])
 
-predictions = Dense(4,activation=args.activation)(model)
+predictions = Dense(3,activation=args.activation)(model)
 
-model = Model(inputs=input_new,outputs=predictions)
+model = Model(inputs=[input_new,cos_values_line],outputs=predictions)
 model.compile(optimizer=opt , loss = loss_space_angle)
 
 history = model.fit_generator(Data_generator(file_path_train,2,activation_function=args.activation,first_iter=first_iter,percent=Percent_files),

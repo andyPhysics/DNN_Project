@@ -20,14 +20,21 @@ def get_feature(labels,feature):
     feature_values = np.array(feature_values)
     return feature_values
 
-def get_cos_values(zenith,azimuth):
+def get_cos_values(zenith,azimuth,activation):
     cos1 = []
     cos2 = []
     cos3 = []
-    for i,j in zip(zenith,azimuth):
-        cos1.append(np.sin(i) * np.cos(j))
-        cos2.append(np.sin(i) * np.sin(j))
-        cos3.append(np.cos(i))
+    if activation == 'tanh':
+        for i,j in zip(zenith,azimuth):
+            cos1.append(np.sin(i) * np.cos(j))
+            cos2.append(np.sin(i) * np.sin(j))
+            cos3.append(np.cos(i))
+    elif activation == 'sigmoid':
+        for i,j in zip(zenith,azimuth):
+            cos1.append((np.sin(i) * np.cos(j)+1.0)/2.0)
+            cos2.append((np.sin(i) * np.sin(j)+1.0)/2.0)
+            cos3.append((np.cos(i)+1.0)/2.0)
+
     return np.array(cos1),np.array(cos2),np.array(cos3)
 
 
@@ -70,23 +77,37 @@ class Data_generator(Sequence):
         pre_azimuth_values = get_feature(labels,2)
         pre_line_fit_az = get_feature(labels,8)
         pre_line_fit_zen = get_feature(labels,9)
-        line_fit_status = get_feature(labels,10)
+        check_bool = True
+        try:
+            line_fit_status = get_feature(labels,10)
+        except:
+            check_bool=False
+            
+        if check_bool:    
+            check_zip = list(zip(pre_zenith_values,pre_azimuth_values,pre_line_fit_az,pre_line_fit_zen,line_fit_status))
+        else:
+            check_zip = list(zip(pre_zenith_values,pre_azimuth_values,pre_line_fit_az,pre_line_fit_zen))
 
-        check_zip = list(zip(pre_zenith_values,pre_azimuth_values,pre_line_fit_az,pre_line_fit_zen,line_fit_status))
-        
         zenith_values = []
         azimuth_values = []
         line_fit_az = []
         line_fit_zen = []
-
-        for i in check_zip[-1]:
-            if i == 0:
-                zenith_values.append(check_zip[0])
-                azimuth_values.append(check_zip[1])
-                line_fit_az.append(check_zip[2])
-                line_fit_zen.append(check_zip[3])
-            else:
-                continue
+        
+        if check_bool:
+            for i in check_zip:
+                if i[-1] == 0:
+                    zenith_values.append(i[0])
+                    azimuth_values.append(i[1])
+                    line_fit_az.append(i[2])
+                    line_fit_zen.append(i[3])
+                else:
+                    continue
+        else:
+            for i in check_zip:
+                zenith_values.append(i[0])
+                azimuth_values.append(i[1])
+                line_fit_az.append(i[2])
+                line_fit_zen.append(i[3])
                 
         zenith_values = np.array(zenith_values)
         azimuth_values = np.array(azimuth_values)
@@ -110,12 +131,11 @@ class Data_generator(Sequence):
             zenith_values = np.array(list(zip(*new_values))[0])
             azimuth_values = np.array(list(zip(*new_values))[1])
             images = np.array(list(zip(*new_values))[2],dtype=np.uint8)
-        cos1_line,cos2_line,cos3_line = get_cos_values(line_fit_zen,line_fit_az)
-        cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values)
+        cos1_line,cos2_line,cos3_line = get_cos_values(line_fit_zen,line_fit_az,self.activation_function)
+        cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values,self.activation_function)
         cos_values = np.array(list(zip(cos1,cos2,cos3)))
         cos_values_line = np.array(list(zip(cos1_line,cos2_line,cos3_line)))
-
-        return images,cos_values,cos_values_line
+        return [images,cos_values_line],cos_values
         
         
         
