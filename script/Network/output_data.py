@@ -131,5 +131,5 @@ value1_predicted=value2
 error,mag1,mag2 = space_angle_error(value1,value2)
 
 #all_values = zip(new_zenith_values,new_azimuth_values,azimuth_predicted,zenith_predicted,error)
-all_values = zip(value1,value1_predicted,error)
+all_values = (value1,value1_predicted,error)
 np.savez(output_file,all_values,delimiter=',')

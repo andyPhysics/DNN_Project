@@ -63,28 +63,28 @@ file_path_test = '/data/user/amedina/DNN/processed_simple/test/'
 file_path_train = '/data/user/amedina/DNN/processed_simple/train/'
 
 
-#def loss_space_angle(y_true,y_pred):
-#    if args.activation=='sigmoid':
-#        y_true1 = y_true*2.0-1.0                     
-#        y_pred1 = y_pred*2.0-1.0
-#    else:
-#    y_true1 = y_true
-#    y_pred1 = y_pred
-#    subtraction = tf.math.subtract(y_true1,y_pred1)
-#    y = tf.matrix_diag_part(K.dot(subtraction,K.transpose(subtraction)))
-#    loss = tf.math.reduce_mean(y)
-#    return loss
+def loss_space_angle(y_true,y_pred):
+    if args.activation=='sigmoid':
+        y_true1 = y_true*2.0-1.0                     
+        y_pred1 = y_pred*2.0-1.0
+    else:
+        y_true1 = y_true
+        y_pred1 = y_pred
+    subtraction = tf.math.subtract(y_true1,y_pred1)
+    y = tf.matrix_diag_part(K.dot(subtraction,K.transpose(subtraction)))
+    loss = tf.math.reduce_mean(y)
+    return loss
 
 early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                               min_delta=0,
                               patience=10,
                               verbose=1, mode='auto')
 
-best_model = keras.callbacks.ModelCheckpoint(args.output_best,
-                                             monitor='val_loss',
-                                             save_best_only=True,
-                                             save_weights_only=False,
-                                             mode='auto')
+#best_model = keras.callbacks.ModelCheckpoint(args.output_best,
+#                                             monitor='val_loss',
+#                                             save_best_only=True,
+#                                             save_weights_only=False,
+#                                             mode='auto')
 
 opt = keras.optimizers.Adamax(lr=3e-4,beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5)
 #opt = keras.optimizers.RMSprop(decay=1e-5)
@@ -121,7 +121,7 @@ cnn_model5 = Flatten()(output3)
 cnn_model = Concatenate(axis=-1)([cnn_model1,cnn_model2,cnn_model3,cnn_model4,cnn_model5])
 
 cnn_model = Model(inputs=model1_input,outputs=cnn_model)
-cnn_model.compile(optimizer=opt , loss = 'mse')
+cnn_model.compile(optimizer=opt , loss = loss_space_angle)
 
 #---------------------------------------------------------------------------------------------
 
@@ -142,13 +142,13 @@ model = Concatenate(axis=-1)([model, input_new_prime])
 predictions = Dense(4,activation=args.activation)(model)
 
 model = Model(inputs=input_new,outputs=predictions)
-model.compile(optimizer=opt , loss = 'mse')
+model.compile(optimizer=opt , loss = loss_space_angle)
 
 history = model.fit_generator(Data_generator(file_path_train,2,activation_function=args.activation,first_iter=first_iter,percent=Percent_files),
                               epochs = epochs,
                               validation_data=Data_generator(file_path_test,4,activation_function=args.activation),
                               workers = num_cpus,
-                              callbacks=[best_model],
+                              #callbacks=[best_model],
                               use_multiprocessing = False)
 
 training = zip(history.history['loss'],history.history['val_loss'])

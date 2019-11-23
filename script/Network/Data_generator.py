@@ -66,8 +66,33 @@ class Data_generator(Sequence):
 
     def __data_generation(self,self_IDs_temp):
         images,labels = load_files(self_IDs_temp)
-        zenith_values = get_feature(labels,1)
-        azimuth_values = get_feature(labels,2)
+        pre_zenith_values = get_feature(labels,1)
+        pre_azimuth_values = get_feature(labels,2)
+        pre_line_fit_az = get_feature(labels,8)
+        pre_line_fit_zen = get_feature(labels,9)
+        line_fit_status = get_feature(labels,10)
+
+        check_zip = list(zip(pre_zenith_values,pre_azimuth_values,pre_line_fit_az,pre_line_fit_zen,line_fit_status))
+        
+        zenith_values = []
+        azimuth_values = []
+        line_fit_az = []
+        line_fit_zen = []
+
+        for i in check_zip[-1]:
+            if i == 0:
+                zenith_values.append(check_zip[0])
+                azimuth_values.append(check_zip[1])
+                line_fit_az.append(check_zip[2])
+                line_fit_zen.append(check_zip[3])
+            else:
+                continue
+                
+        zenith_values = np.array(zenith_values)
+        azimuth_values = np.array(azimuth_values)
+        line_fit_az = np.array(line_fit_az)
+        line_fit_zen = np.array(line_fit_zen)
+
         if self.first_iter == True:
             import random
             check = list(zip(zenith_values,azimuth_values,images))
@@ -85,11 +110,12 @@ class Data_generator(Sequence):
             zenith_values = np.array(list(zip(*new_values))[0])
             azimuth_values = np.array(list(zip(*new_values))[1])
             images = np.array(list(zip(*new_values))[2],dtype=np.uint8)
-        azimuth_values_new = [(i-np.pi)/np.pi for i in azimuth_values]
+        cos1_line,cos2_line,cos3_line = get_cos_values(line_fit_zen,line_fit_az)
         cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values)
-        cos_values = np.array(list(zip(cos1,cos2,cos3,azimuth_values_new)))
+        cos_values = np.array(list(zip(cos1,cos2,cos3)))
+        cos_values_line = np.array(list(zip(cos1_line,cos2_line,cos3_line)))
 
-        return images,cos_values
+        return images,cos_values,cos_values_line
         
         
         
