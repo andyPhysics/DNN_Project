@@ -16,7 +16,6 @@ from sklearn.model_selection import train_test_split
 from keras.layers import LeakyReLU
 from keras import regularizers
 from Data_generator import *
-import multiprocessing as mp
 import argparse
 
 

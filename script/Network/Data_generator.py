@@ -6,7 +6,7 @@ def load_files(batch):
     images = []
     labels = []
     for i in batch:
-        x = np.load(i,allow_pickle=True,encoding='latin1').item()
+        x = np.load(i,allow_pickle=True,encoding='latin1')['arr_0'].item()
         keys = x.keys()
         for key in keys:
             images.append(x[key][0])
@@ -18,6 +18,16 @@ def get_feature(labels,feature):
     for i in labels:
         feature_values.append(i[feature])
     feature_values = np.array(feature_values)
+    return feature_values
+
+def get_cuts(labels):
+    feature_values = []
+    for i in labels:
+        try:
+            feature_values.append(i[10])
+        except:
+            feature_values.append(0)
+    feature_values=np.array(feature_values)
     return feature_values
 
 def get_cos_values(zenith,azimuth,activation):
@@ -40,13 +50,14 @@ def get_cos_values(zenith,azimuth,activation):
 
 class Data_generator(Sequence):
 
-    def __init__(self,directory,batch_size,activation_function='sigmoid',percent=1,shuffle=False,first_iter=False,augmentations=None):
+    def __init__(self,directory,batch_size,activation_function='sigmoid',percent=1.0,shuffle=False,first_iter=False,augmentations=None):
         y = os.listdir(directory)
         self.files = []
         for i in y:
             self.files.append(directory+i)
-        self.files = self.files[0:int(np.ceil(len(self.files)*percent))]
+        self.files = np.array(self.files)
         self.batch_size = batch_size
+        self.files_split = np.array_split(self.files,np.ceil(len(self.files)/self.batch_size))
         self.shuffle = shuffle
         self.activation_function = activation_function
         self.on_epoch_end()
@@ -54,12 +65,15 @@ class Data_generator(Sequence):
         self.augment = augmentations
 
     def __len__(self):
-        return int(np.floor(len(self.files)/float(self.batch_size)))
+        #length = int(np.ceil(len(self.files)/float(self.batch_size)))
+        length = len(self.files_split)
+        return length
 
     def __getitem__(self,index):
 
-        indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
-        list_IDs_temp = [self.files[k] for k in indexes]
+        #indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
+        #list_IDs_temp = [self.files[k] for k in indexes]
+        list_IDs_temp = self.files_split[index]
 
         X, Y = self.__data_generation(list_IDs_temp)
         
@@ -67,7 +81,7 @@ class Data_generator(Sequence):
 
 
     def on_epoch_end(self):
-        self.indexes = np.arange(len(self.files))
+        self.indexes = np.arange(len(self.files_split))
         if self.shuffle == True:
             np.random.shuffle(self.indexes)
 
@@ -77,38 +91,20 @@ class Data_generator(Sequence):
         pre_azimuth_values = get_feature(labels,2)
         pre_line_fit_az = get_feature(labels,8)
         pre_line_fit_zen = get_feature(labels,9)
-        check_bool = True
-        try:
-            line_fit_status = get_feature(labels,10)
-        except:
-            check_bool=False
-            
-        if check_bool:    
-            check_zip = list(zip(pre_zenith_values,pre_azimuth_values,pre_line_fit_az,pre_line_fit_zen,line_fit_status))
-        else:
-            check_zip = list(zip(pre_zenith_values,pre_azimuth_values,pre_line_fit_az,pre_line_fit_zen))
-
+        line_fit_status = get_cuts(labels)
+        check_zip = list(zip(pre_zenith_values,pre_azimuth_values,pre_line_fit_az,pre_line_fit_zen,line_fit_status))
+        
         zenith_values = []
         azimuth_values = []
         line_fit_az = []
         line_fit_zen = []
         
-        if check_bool:
-            for i in check_zip:
-                if i[-1] == 0:
-                    zenith_values.append(i[0])
-                    azimuth_values.append(i[1])
-                    line_fit_az.append(i[2])
-                    line_fit_zen.append(i[3])
-                else:
-                    continue
-        else:
-            for i in check_zip:
-                zenith_values.append(i[0])
-                azimuth_values.append(i[1])
-                line_fit_az.append(i[2])
-                line_fit_zen.append(i[3])
-                
+        for i in check_zip:
+            zenith_values.append(i[0])
+            azimuth_values.append(i[1])
+            line_fit_az.append(i[2])
+            line_fit_zen.append(i[3])
+                        
         zenith_values = np.array(zenith_values)
         azimuth_values = np.array(azimuth_values)
         line_fit_az = np.array(line_fit_az)
