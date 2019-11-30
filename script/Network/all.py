@@ -20,7 +20,7 @@ import argparse
 
 
 num_cpus = 3
-epochs=48
+epochs=100
 Percent_files = 1.0
 first_iter = False
 
@@ -53,7 +53,7 @@ parser.add_argument('-t',
 
 parser.add_argument('-do',
                     dest='do_rate',
-                    default=0.75,
+                    default=0.5,
                     help='This is the dropout rate')
 
 args = parser.parse_args()
