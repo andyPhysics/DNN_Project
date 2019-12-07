@@ -15,7 +15,7 @@ from keras.layers import SeparableConv2D, MaxPooling2D, GaussianNoise
 from sklearn.model_selection import train_test_split
 from keras.layers import LeakyReLU
 from keras import regularizers
-from Data_generator import *
+from Data_generator_new import *
 import argparse
 
 
@@ -125,7 +125,8 @@ cnn_model.compile(optimizer=opt , loss = loss_space_angle)
 #---------------------------------------------------------------------------------------------
 
 input_new = Input(shape=(feature_number,img_heights,img_rows))
-cos_values_line = Input(shape=(3,))
+cos_values_line = Input(shape=(2,))
+cos3_line = Input(shape=(1,))
 
 output = Lambda(lambda x: cnn_model(x))(input_new)
 
@@ -136,13 +137,26 @@ model = ELU()(model)
 model = Dropout(rate=args.do_rate)(model)
 model = Dense(512)(model)
 model = ELU()(model)
-
 input_new_prime = Flatten()(input_new)
 model = Concatenate(axis=-1)([model, input_new_prime])
 
-predictions = Dense(3,activation=args.activation)(model)
+model2 = Dropout(rate=args.do_rate)(output)
+model2 = Concatenate(axis=-1)([model2,cos3_line])
+model2 = Dense(512)(model2)
+model2 = ELU()(model2)
+model2 = Dropout(rate=args.do_rate)(model2)
+model2 = Dense(512)(model2)
+model2 = ELU()(model2)
+model2 = Concatenate(axis=-1)([model2, input_new_prime])
 
-model = Model(inputs=[input_new,cos_values_line],outputs=predictions)
+
+predict1 = Dense(2,activation=args.activation)(model)
+predict2 = Dense(1,activation=args.activation)(model2)
+
+#predictions = Dense(3,activation=args.activation)(model3)
+predictions = Concatenate(axis=-1)([predict1,predict2])
+
+model = Model(inputs=[input_new,cos_values_line,cos3_line],outputs=predictions)
 model.compile(optimizer=opt , loss = loss_space_angle)
 
 history = model.fit_generator(Data_generator(file_path_train,2,activation_function=args.activation,first_iter=first_iter,percent=Percent_files),

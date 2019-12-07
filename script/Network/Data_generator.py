@@ -98,24 +98,30 @@ class Data_generator(Sequence):
         azimuth_values = []
         line_fit_az = []
         line_fit_zen = []
+        line_fit_stat = []
         
         for i in check_zip:
             zenith_values.append(i[0])
             azimuth_values.append(i[1])
             line_fit_az.append(i[2])
             line_fit_zen.append(i[3])
+            line_fit_stat.append(i[4])
                         
         zenith_values = np.array(zenith_values)
         azimuth_values = np.array(azimuth_values)
         line_fit_az = np.array(line_fit_az)
         line_fit_zen = np.array(line_fit_zen)
+        line_fit_stat = np.array(line_fit_stat)
 
         if self.first_iter == True:
             import random
-            check = list(zip(zenith_values,azimuth_values,images))
+            check = list(zip(zenith_values,azimuth_values,line_fit_az,line_fit_zen,images,line_fit_stat))
             new_values = []
             z = max(zenith_values)
             for i in check:
+                if i[5]!=0:
+                    print(i[5])
+                    continue
                 if i[0] > z/2.13:
                     new_values.append(i)
                 else:
@@ -126,12 +132,14 @@ class Data_generator(Sequence):
                         continue
             zenith_values = np.array(list(zip(*new_values))[0])
             azimuth_values = np.array(list(zip(*new_values))[1])
-            images = np.array(list(zip(*new_values))[2],dtype=np.uint8)
+            images = np.array(list(zip(*new_values))[4],dtype=np.uint8)
+            line_fit_az = np.array(list(zip(*new_values))[2])
+            line_fit_zen = np.array(list(zip(*new_values))[3])
         cos1_line,cos2_line,cos3_line = get_cos_values(line_fit_zen,line_fit_az,self.activation_function)
         cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values,self.activation_function)
         cos_values = np.array(list(zip(cos1,cos2,cos3)))
-        cos_values_line = np.array(list(zip(cos1_line,cos2_line,cos3_line)))
-        return [images,cos_values_line],cos_values
+        cos_values_line = np.array(list(zip(cos1_line,cos2_line)))
+        return [images,cos_values_line,cos3_line],cos_values
         
         
         
