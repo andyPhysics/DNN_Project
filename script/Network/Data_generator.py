@@ -137,6 +137,7 @@ class Data_generator(Sequence):
             images = np.array(list(zip(*new_values))[4],dtype=np.uint8)
             line_fit_az = np.array(list(zip(*new_values))[2])
             line_fit_zen = np.array(list(zip(*new_values))[3])
+
         if self.up == 0:
             check = list(zip(zenith_values,azimuth_values,line_fit_az,line_fit_zen,images,line_fit_stat))
             new_values = []
@@ -166,7 +167,7 @@ class Data_generator(Sequence):
             check = list(zip(zenith_values,azimuth_values,line_fit_az,line_fit_zen,images,line_fit_stat))
             new_values = []
             for i in check:
-            if i[3] < np.pi/2.0:
+                if i[3] < np.pi/2.0:
                     new_values.append(i)
 
             zenith_values = np.array(list(zip(*new_values))[0])
@@ -175,11 +176,12 @@ class Data_generator(Sequence):
             line_fit_az = np.array(list(zip(*new_values))[2])
             line_fit_zen = np.array(list(zip(*new_values))[3])
 
-
+        
 
         cos1_line,cos2_line,cos3_line = get_cos_values(line_fit_zen,line_fit_az,self.activation_function)
         cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values,self.activation_function)
         cos_values = np.array(list(zip(cos1,cos2,cos3)))
+        print(cos_values.shape)
         cos_values_line = np.array(list(zip(cos1_line,cos2_line)))
         return [images,cos_values_line,cos3_line],cos_values
         
