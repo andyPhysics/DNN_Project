@@ -9,7 +9,7 @@ def load_files(batch):
         x = np.load(i,allow_pickle=True,encoding='latin1')['arr_0'].item()
         keys = x.keys()
         for key in keys:
-            images.append(x[key][0])
+            images.append([x[key][0][0]])
             labels.append(x[key][1])
     return np.array(images),np.array(labels)
 
@@ -183,7 +183,7 @@ class Data_generator(Sequence):
         cos_values = np.array(list(zip(cos1,cos2,cos3)))
         print(cos_values.shape)
         cos_values_line = np.array(list(zip(cos1_line,cos2_line)))
-        return [images,cos_values_line,cos3_line],cos_values
+        return [images,cos_values_line,cos3_line],[cos1,cos2,cos3]
         
         
         
