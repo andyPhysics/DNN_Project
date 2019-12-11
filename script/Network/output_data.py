@@ -79,7 +79,7 @@ line_fit_zen = []
 new_images = []
 
 for i in check_zip:
-    new_images.append(i[0])
+    new_images.append([i[0][0]])
     zenith_values.append(i[1])
     azimuth_values.append(i[2])
     line_fit_az.append(i[3])
@@ -94,16 +94,16 @@ line_fit_zen = np.array(line_fit_zen)
 cos1_line,cos2_line,cos3_line = get_cos_values(line_fit_zen,line_fit_az,'sigmoid')
 cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values,'sigmoid')
 cos_values = np.array(list(zip(cos1,cos2,cos3)))
-cos_values_line = np.array(list(zip(cos1_line,cos2_line,cos3_line)))
+cos_values_line = np.array(list(zip(cos1_line,cos2_line)))
 
 
 from keras.models import load_model
 import tensorflow as tf
 from keras import backend as K
 
-def predict_images(model_name,images):
+def predict_images(model_name,images,cos_values_line,cos3_line):
     model = load_model(model_name)
-    predicted_cos_values = model.predict(images)
+    predicted_cos_values = model.predict([images,cos_values_line,cos3_line])
     return predicted_cos_values
 
 def loss_space_angle(y_true,y_pred):
@@ -114,11 +114,11 @@ def loss_space_angle(y_true,y_pred):
 
 cnn_model = load_model(cnn_best,custom_objects={'loss_space_angle':loss_space_angle})
 model = load_model(output_best,custom_objects={'cnn_model':cnn_model,'loss_space_angle':loss_space_angle})
-cos_values_pred = model.predict([new_images,cos_values_line])
+cos_values_pred = model.predict([new_images,cos_values_line,cos3_line])
 
-cos_values_1_1 = [(i*2.0 - 1.0) for i in list(zip(*cos_values_pred))[0]]
-cos_values_1_2 = [ (i*2.0 - 1.0) for i in list(zip(*cos_values_pred))[1]]
-cos_values_1_3 = [(i*2.0 - 1.0) for i in list(zip(*cos_values_pred))[2]]
+cos_values_1_1 = [(i*2.0 - 1.0) for i in cos_values_pred[0]]
+cos_values_1_2 = [ (i*2.0 - 1.0) for i in cos_values_pred[1]]
+cos_values_1_3 = [(i*2.0 - 1.0) for i in cos_values_pred[2]]
 
 cos_values_1=list(zip(*cos_values))[0]
 cos_values_2=list(zip(*cos_values))[1]

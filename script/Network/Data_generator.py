@@ -50,7 +50,7 @@ def get_cos_values(zenith,azimuth,activation):
 
 class Data_generator(Sequence):
 
-    def __init__(self,directory,batch_size,activation_function='sigmoid',percent=1.0,shuffle=False,first_iter=False,augmentations=None):
+    def __init__(self,directory,batch_size,activation_function='sigmoid',percent=1.0,shuffle=False,first_iter=False,augmentations=None,up = 0):
         y = os.listdir(directory)
         self.files = []
         for i in y:
@@ -63,6 +63,7 @@ class Data_generator(Sequence):
         self.on_epoch_end()
         self.first_iter = first_iter
         self.augment = augmentations
+        self.up = up
 
     def __len__(self):
         #length = int(np.ceil(len(self.files)/float(self.batch_size)))
@@ -130,11 +131,52 @@ class Data_generator(Sequence):
                         new_values.append(i)
                     else:
                         continue
+
             zenith_values = np.array(list(zip(*new_values))[0])
             azimuth_values = np.array(list(zip(*new_values))[1])
             images = np.array(list(zip(*new_values))[4],dtype=np.uint8)
             line_fit_az = np.array(list(zip(*new_values))[2])
             line_fit_zen = np.array(list(zip(*new_values))[3])
+        if self.up == 0:
+            check = list(zip(zenith_values,azimuth_values,line_fit_az,line_fit_zen,images,line_fit_stat))
+            new_values = []
+            for i in check:
+                new_values.append(i)
+               
+            zenith_values = np.array(list(zip(*new_values))[0])
+            azimuth_values = np.array(list(zip(*new_values))[1])
+            images = np.array(list(zip(*new_values))[4],dtype=np.uint8)
+            line_fit_az = np.array(list(zip(*new_values))[2])
+            line_fit_zen = np.array(list(zip(*new_values))[3])
+
+        elif self.up == 1:
+            check = list(zip(zenith_values,azimuth_values,line_fit_az,line_fit_zen,images,line_fit_stat))
+            new_values = []
+            for i in check:
+                if i[3] >= np.pi/2.0: 
+                    new_values.append(i)
+                
+            zenith_values = np.array(list(zip(*new_values))[0])
+            azimuth_values = np.array(list(zip(*new_values))[1])
+            images = np.array(list(zip(*new_values))[4],dtype=np.uint8)
+            line_fit_az = np.array(list(zip(*new_values))[2])
+            line_fit_zen = np.array(list(zip(*new_values))[3])
+
+        elif self.up == 2:
+            check = list(zip(zenith_values,azimuth_values,line_fit_az,line_fit_zen,images,line_fit_stat))
+            new_values = []
+            for i in check:
+            if i[3] < np.pi/2.0:
+                    new_values.append(i)
+
+            zenith_values = np.array(list(zip(*new_values))[0])
+            azimuth_values = np.array(list(zip(*new_values))[1])
+            images = np.array(list(zip(*new_values))[4],dtype=np.uint8)
+            line_fit_az = np.array(list(zip(*new_values))[2])
+            line_fit_zen = np.array(list(zip(*new_values))[3])
+
+
+
         cos1_line,cos2_line,cos3_line = get_cos_values(line_fit_zen,line_fit_az,self.activation_function)
         cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values,self.activation_function)
         cos_values = np.array(list(zip(cos1,cos2,cos3)))

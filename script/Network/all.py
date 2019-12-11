@@ -15,12 +15,12 @@ from keras.layers import SeparableConv2D, MaxPooling2D, GaussianNoise
 from sklearn.model_selection import train_test_split
 from keras.layers import LeakyReLU
 from keras import regularizers
-from Data_generator_new import *
+from Data_generator import *
 import argparse
 
 
 num_cpus = 3
-epochs=100
+epochs=10
 Percent_files = 1.0
 first_iter = False
 
@@ -56,11 +56,17 @@ parser.add_argument('-do',
                     default=0.5,
                     help='This is the dropout rate')
 
+parser.add_argument('-zen',
+                    dest='filter_zen',
+                    default=0,
+                    help='Filter zen:0 is all, 1 is up, 2 is down')
+
+
 args = parser.parse_args()
 
 file_path_test = '/data/user/amedina/DNN/processed_simple/test/'
 file_path_train = '/data/user/amedina/DNN/processed_simple/train/'
-
+filter_zen = int(args.filter_zen)
 
 def loss_space_angle(y_true,y_pred):
     if args.activation=='sigmoid':
@@ -94,7 +100,7 @@ img_heights,img_rows = 60,86
 kernel = 3
 kernel2 = 2
 
-feature_number = 9
+feature_number = 1
 
 #------------------------------------------------------------------------------------------
 
@@ -120,7 +126,7 @@ cnn_model5 = Flatten()(output3)
 cnn_model = Concatenate(axis=-1)([cnn_model1,cnn_model2,cnn_model3,cnn_model4,cnn_model5])
 
 cnn_model = Model(inputs=model1_input,outputs=cnn_model)
-cnn_model.compile(optimizer=opt , loss = loss_space_angle)
+cnn_model.compile(optimizer=opt , loss = 'mse')
 
 #---------------------------------------------------------------------------------------------
 
@@ -135,10 +141,18 @@ model = Concatenate(axis=-1)([model,cos_values_line])
 model = Dense(512)(model)
 model = ELU()(model)
 model = Dropout(rate=args.do_rate)(model)
+
+input_new_prime = Flatten()(input_new)
+
+
 model = Dense(512)(model)
 model = ELU()(model)
-input_new_prime = Flatten()(input_new)
 model = Concatenate(axis=-1)([model, input_new_prime])
+
+model3 = Dense(512)(model)
+model3 = ELU()(model3)
+model3 = Concatenate(axis=-1)([model3, input_new_prime])
+
 
 model2 = Dropout(rate=args.do_rate)(output)
 model2 = Concatenate(axis=-1)([model2,cos3_line])
@@ -150,18 +164,18 @@ model2 = ELU()(model2)
 model2 = Concatenate(axis=-1)([model2, input_new_prime])
 
 
-predict1 = Dense(2,activation=args.activation)(model)
-predict2 = Dense(1,activation=args.activation)(model2)
+predict1 = Dense(1,activation=args.activation)(model)
+predict2 = Dense(1,activation=args.activation)(model3)
+predict3 = Dense(1,activation=args.activation)(model2)
 
 #predictions = Dense(3,activation=args.activation)(model3)
-predictions = Concatenate(axis=-1)([predict1,predict2])
 
-model = Model(inputs=[input_new,cos_values_line,cos3_line],outputs=predictions)
-model.compile(optimizer=opt , loss = loss_space_angle)
+model = Model(inputs=[input_new,cos_values_line,cos3_line],outputs=[predict1,predict2,predict3])
+model.compile(optimizer=opt , loss = 'mse')
 
-history = model.fit_generator(Data_generator(file_path_train,2,activation_function=args.activation,first_iter=first_iter,percent=Percent_files),
+history = model.fit_generator(Data_generator(file_path_train,2,activation_function=args.activation,first_iter=first_iter,percent=Percent_files,up=filter_zen),
                               epochs = epochs,
-                              validation_data=Data_generator(file_path_test,4,activation_function=args.activation),
+                              validation_data=Data_generator(file_path_test,4,activation_function=args.activation,up=filter_zen),
                               workers = num_cpus,
                               #callbacks=[best_model],
                               use_multiprocessing = False)
