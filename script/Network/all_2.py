@@ -15,7 +15,7 @@ from keras.layers import SeparableConv2D, MaxPooling2D, GaussianNoise
 from sklearn.model_selection import train_test_split
 from keras.layers import LeakyReLU
 from keras import regularizers
-from Data_generator import *
+from Data_generator_new import *
 import argparse
 
 
@@ -54,19 +54,20 @@ parser.add_argument('-t',
 parser.add_argument('-do',
                     dest='do_rate',
                     default=0.5,
+                    type = float,
                     help='This is the dropout rate')
 
-parser.add_argument('-zen',
-                    dest='filter_zen',
+parser.add_argument('-energy',
+                    dest='filter_energy',
                     default=0,
-                    help='Filter zen:0 is all, 1 is up, 2 is down')
+                    help='Filter energy:[0] all,[1] is 4 to 5, [2] is 5 to 6 and [3] is 6 to 7')
 
 
 args = parser.parse_args()
 
 file_path_test = '/data/user/amedina/DNN/processed_simple/test/'
 file_path_train = '/data/user/amedina/DNN/processed_simple/train/'
-filter_zen = int(args.filter_zen)
+filter_energy = int(args.filter_energy)
 
 def loss_space_angle(y_true,y_pred):
     if args.activation=='sigmoid':
@@ -91,8 +92,8 @@ early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
 #                                             save_weights_only=False,
 #                                             mode='auto')
 
-#opt = keras.optimizers.Adamax(lr=3e-4,beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5)
-opt = keras.optimizers.RMSprop(decay=1e-5)
+opt = keras.optimizers.Adamax(lr=3e-4,beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5)
+#opt = keras.optimizers.RMSprop(decay=1e-5)
 
 
 img_heights,img_rows = 60,86
@@ -117,13 +118,7 @@ model1 = SeparableConv2D(32,kernel,padding='same',kernel_regularizer=regularizer
 model1 = ELU()(model1)
 output3 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model1)
 model1 = SeparableConv2D(32,kernel,padding='same',kernel_regularizer=regularizers.l2(0.01),data_format='channels_first')(output3)
-
-cnn_model1 = Flatten()(model1_input)
-cnn_model2 = Flatten()(model1)
-cnn_model3 = Flatten()(output1)
-cnn_model4 = Flatten()(output2)
-cnn_model5 = Flatten()(output3)
-cnn_model = Concatenate(axis=-1)([cnn_model1,cnn_model2,cnn_model3,cnn_model4,cnn_model5])
+cnn_model = Flatten()(model1)
 
 cnn_model = Model(inputs=model1_input,outputs=cnn_model)
 cnn_model.compile(optimizer=opt , loss = loss_space_angle)
@@ -133,28 +128,27 @@ cnn_model.compile(optimizer=opt , loss = loss_space_angle)
 input_new = Input(shape=(feature_number,img_heights,img_rows))
 cos_values_line = Input(shape=(3,))
 
-output = Lambda(lambda x: cnn_model(x))(input_new)
+output1 = Lambda(lambda x: cnn_model(x))(input_new)
 
 input_new_prime = Flatten()(input_new)
 
-model = Dropout(rate=args.do_rate)(output)
-model = Concatenate(axis=-1)([model,cos_values_line])
-model = Dense(256)(model)
-model = ELU()(model)
-model = Dropout(rate=args.do_rate)(model)
-model = Dense(128)(model)
-model = ELU()(model)
-model = Concatenate(axis=-1)([model, input_new_prime,cos_values_line])
+model1 = Dropout(rate=args.do_rate)(output1)
+model1 = Concatenate(axis=-1)([model1,cos_values_line])
+model1 = Dense(256)(model1)
+model1 = ELU()(model1)
+model1 = Dropout(rate=args.do_rate)(model1)
+model1 = Dense(256)(model1)
+model1 = ELU()(model1)
+model1 = Concatenate(axis=-1)([model1, input_new_prime,cos_values_line])
 
-
-predictions = Dense(3,activation='linear')(model)
+predictions = Dense(3)(model1)
 
 model = Model(inputs=[input_new,cos_values_line],outputs=predictions)
 model.compile(optimizer=opt , loss = loss_space_angle)
 
-history = model.fit_generator(Data_generator(file_path_train,2,activation_function=args.activation,first_iter=first_iter,percent=Percent_files,up=filter_zen),
+history = model.fit_generator(Data_generator(file_path_train,2,activation_function=args.activation,first_iter=first_iter,percent=Percent_files,up=filter_energy),
                               epochs = epochs,
-                              validation_data=Data_generator(file_path_test,4,activation_function=args.activation,up=filter_zen),
+                              validation_data=Data_generator(file_path_test,4,activation_function=args.activation,up=filter_energy),
                               workers = num_cpus,
                               #callbacks=[best_model],
                               use_multiprocessing = False)

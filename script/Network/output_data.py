@@ -52,10 +52,10 @@ def get_cos_values(zenith,azimuth,activation):
 
 #cnn_best = '/home/amedina/DNN_Project.git/trunk/script/Network/cnn_model_all.h5'  
 #output_best='/home/amedina/DNN_Project.git/trunk/script/Network/model_all.h5'
-cnn_up = '/data/user/amedina/cnn_model_up.h5'
-model_up = '/data/user/amedina/model_up.h5'
-cnn_down = '/data/user/amedina/cnn_model_down.h5'
-model_down = '/data/user/amedina/model_down.h5'
+cnn_up = '/home/amedina/DNN_Project.git/trunk/script/Network/cnn_model_up.h5'
+model_up = '/home/amedina/DNN_Project.git/trunk/script/Network/model_up.h5'
+cnn_down = '/home/amedina/DNN_Project.git/trunk/script/Network/cnn_model_down.h5'
+model_down = '/home/amedina/DNN_Project.git/trunk/script/Network/model_down.h5'
 
 output_file = 'output_new'
 
@@ -70,58 +70,68 @@ for i in y:
 #file_names_batched = list(np.array_split(file_names,50))
 
 images,labels = load_files(file_names)
+energy = get_feature(labels,0)
 pre_zenith_values = get_feature(labels,1)
 pre_azimuth_values = get_feature(labels,2)
 pre_line_fit_az = get_feature(labels,8)
 pre_line_fit_zen = get_feature(labels,9)
 line_fit_status = get_cuts(labels)
 
-check_zip = list(zip(images,pre_zenith_values,pre_azimuth_values,pre_line_fit_az,pre_line_fit_zen,line_fit_status))
+check_zip = list(zip(images,pre_zenith_values,pre_azimuth_values,pre_line_fit_az,pre_line_fit_zen,line_fit_status,energy))
 
 def get_values(check_zip,up):
     zenith_values = []
     azimuth_values = []
     line_fit_az = []
     line_fit_zen = []
+    energy = []
     new_images = []
-
+    status = []
     for i in check_zip:
         if up ==0:
-            new_images.append([i[0]])
+            new_images.append(i[0])
             zenith_values.append(i[1])
             azimuth_values.append(i[2])
             line_fit_az.append(i[3])
             line_fit_zen.append(i[4])
+            status.append(i[5])
+            energy.append(i[6])
         if up ==1:
             if i[4] >= np.pi/2:
-                new_images.append([i[0]])
+                new_images.append(i[0])
                 zenith_values.append(i[1])
                 azimuth_values.append(i[2])
                 line_fit_az.append(i[3])
                 line_fit_zen.append(i[4])
-        if up ==0:
+                status.append(i[5])
+                energy.append(i[6])
+        if up ==2:
             if i[4] < np.pi/2:
-                new_images.append([i[0]])
+                new_images.append(i[0])
                 zenith_values.append(i[1])
                 azimuth_values.append(i[2])
                 line_fit_az.append(i[3])
                 line_fit_zen.append(i[4])
+                status.append(i[5])
+                energy.append(i[6])
     new_images = np.array(new_images)
     zenith_values = np.array(zenith_values)
     azimuth_values = np.array(azimuth_values)
     line_fit_az = np.array(line_fit_az)
     line_fit_zen = np.array(line_fit_zen)
+    energy = np.array(energy)
+    status = np.array(status)
 
     cos1_line,cos2_line,cos3_line = get_cos_values(line_fit_zen,line_fit_az,'tanh')
     cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values,'tanh')
     cos_values = np.array(list(zip(cos1,cos2,cos3)))
     cos_values_line = np.array(list(zip(cos1_line,cos2_line)))
 
-    return new_images,cos_values,cos_values_line,cos3_line
+    return new_images,cos_values,cos_values_line,cos3_line,energy,status
 
 
-new_images_up,cos_values_up,cos_values_line_up,cos3_line_up = get_values(check_zip,1)
-new_images_down,cos_values_down,cos_values_line_down,cos3_line_down = get_values(check_zip,2)
+new_images_up,cos_values_up,cos_values_line_up,cos3_line_up,energy_up,status_up= get_values(check_zip,1)
+new_images_down,cos_values_down,cos_values_line_down,cos3_line_down,energy_down,status_down = get_values(check_zip,2)
 
 
 
@@ -141,15 +151,15 @@ def loss_space_angle(y_true,y_pred):
     return loss
 
 cnn_model = load_model(cnn_up)
-model = load_model(output_up)
-cos_values_pred_up = model.predict([new_images_up,cos_values_line_up,cos3_line_up],custom_objecst={'cnn_model':cnn_model})
+model = load_model(model_up,custom_objects={'cnn_model':cnn_model})
+cos_values_pred_up = model.predict([new_images_up,cos_values_line_up,cos3_line_up])
 
 cnn_model = load_model(cnn_down)
-model = load_model(output_down)
-cos_values_pred_down = model.predict([new_images_down,cos_values_line_down,cos3_line_down],custom_objects={'cnn_model':cnn_model})
+model = load_model(model_down,custom_objects={'cnn_model':cnn_model})
+cos_values_pred_down = model.predict([new_images_down,cos_values_line_down,cos3_line_down])
 
 
-all_values = (cos_values_up,cos_values_down,cos_values_pred_up,cos_values_pred_down)
+all_values = (cos_values_up,cos_values_down,cos_values_pred_up,cos_values_pred_down,energy_up,energy_down,status_up,status_down)
 
 
 

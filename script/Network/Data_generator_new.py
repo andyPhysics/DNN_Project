@@ -93,13 +93,15 @@ class Data_generator(Sequence):
         pre_line_fit_az = get_feature(labels,8)
         pre_line_fit_zen = get_feature(labels,9)
         line_fit_status = get_cuts(labels)
-        check_zip = list(zip(pre_zenith_values,pre_azimuth_values,pre_line_fit_az,pre_line_fit_zen,line_fit_status))
+        energy = get_feature(labels,0)
+        check_zip = list(zip(pre_zenith_values,pre_azimuth_values,pre_line_fit_az,pre_line_fit_zen,line_fit_status,energy))
         
         zenith_values = []
         azimuth_values = []
         line_fit_az = []
         line_fit_zen = []
         line_fit_stat = []
+        energy_new = []
         
         for i in check_zip:
             zenith_values.append(i[0])
@@ -107,39 +109,17 @@ class Data_generator(Sequence):
             line_fit_az.append(i[2])
             line_fit_zen.append(i[3])
             line_fit_stat.append(i[4])
+            energy_new.append(i[5])
                         
         zenith_values = np.array(zenith_values)
         azimuth_values = np.array(azimuth_values)
         line_fit_az = np.array(line_fit_az)
         line_fit_zen = np.array(line_fit_zen)
         line_fit_stat = np.array(line_fit_stat)
-
-        if self.first_iter == True:
-            import random
-            check = list(zip(zenith_values,azimuth_values,line_fit_az,line_fit_zen,images,line_fit_stat))
-            new_values = []
-            z = max(zenith_values)
-            for i in check:
-                if i[5]!=0:
-                    print(i[5])
-                    continue
-                if i[0] > z/2.13:
-                    new_values.append(i)
-                else:
-                    n = abs(np.random.poisson())
-                    if n < 1.0:
-                        new_values.append(i)
-                    else:
-                        continue
-
-            zenith_values = np.array(list(zip(*new_values))[0])
-            azimuth_values = np.array(list(zip(*new_values))[1])
-            images = np.array(list(zip(*new_values))[4],dtype=np.uint8)
-            line_fit_az = np.array(list(zip(*new_values))[2])
-            line_fit_zen = np.array(list(zip(*new_values))[3])
+        energy_new = np.array(energy_new)
 
         if self.up == 0:
-            check = list(zip(zenith_values,azimuth_values,line_fit_az,line_fit_zen,images,line_fit_stat))
+            check = list(zip(zenith_values,azimuth_values,line_fit_az,line_fit_zen,images,line_fit_stat,energy_new))
             new_values = []
             for i in check:
                 new_values.append(i)
@@ -152,10 +132,10 @@ class Data_generator(Sequence):
 
 
         elif self.up == 1:
-            check = list(zip(zenith_values,azimuth_values,line_fit_az,line_fit_zen,images,line_fit_stat))
+            check = list(zip(zenith_values,azimuth_values,line_fit_az,line_fit_zen,images,line_fit_stat,energy_new))
             new_values = []
             for i in check:
-                if i[3] >= np.pi/2.0: 
+                if np.log10(i[6]) < 5.5: 
                     new_values.append(i)
                 
             zenith_values = np.array(list(zip(*new_values))[0])
@@ -165,10 +145,10 @@ class Data_generator(Sequence):
             line_fit_zen = np.array(list(zip(*new_values))[3])
 
         elif self.up == 2:
-            check = list(zip(zenith_values,azimuth_values,line_fit_az,line_fit_zen,images,line_fit_stat))
+            check = list(zip(zenith_values,azimuth_values,line_fit_az,line_fit_zen,images,line_fit_stat,energy_new))
             new_values = []
             for i in check:
-                if i[3] < np.pi/2.0:
+                if np.log10(i[6]) > 5.5:
                     new_values.append(i)
 
             zenith_values = np.array(list(zip(*new_values))[0])
@@ -176,8 +156,6 @@ class Data_generator(Sequence):
             images = np.array(list(zip(*new_values))[4],dtype=np.uint8)
             line_fit_az = np.array(list(zip(*new_values))[2])
             line_fit_zen = np.array(list(zip(*new_values))[3])
-
-        
 
         cos1_line,cos2_line,cos3_line = get_cos_values(line_fit_zen,line_fit_az,self.activation_function)
         cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values,self.activation_function)
