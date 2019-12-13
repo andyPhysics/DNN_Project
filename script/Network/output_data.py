@@ -50,15 +50,11 @@ def get_cos_values(zenith,azimuth,activation):
     return np.array(cos1),np.array(cos2),np.array(cos3)
 
 
-#cnn_best = '/home/amedina/DNN_Project.git/trunk/script/Network/cnn_model_all.h5'  
-#output_best='/home/amedina/DNN_Project.git/trunk/script/Network/model_all.h5'
-cnn_up = '/home/amedina/DNN_Project.git/trunk/script/Network/cnn_model_up.h5'
-model_up = '/home/amedina/DNN_Project.git/trunk/script/Network/model_up.h5'
-cnn_down = '/home/amedina/DNN_Project.git/trunk/script/Network/cnn_model_down.h5'
-model_down = '/home/amedina/DNN_Project.git/trunk/script/Network/model_down.h5'
+cnn = '/data/user/amedina/cnn_model_high.h5'
+model = '/data/user/amedina/model_high.h5'
 
-output_file = 'output_new'
-
+output_file = 'output_high'
+up = 2
 
 file_path = '/data/user/amedina/DNN/processed_simple/validation/'
 y = os.listdir(file_path)
@@ -97,7 +93,7 @@ def get_values(check_zip,up):
             status.append(i[5])
             energy.append(i[6])
         if up ==1:
-            if i[4] >= np.pi/2:
+            if np.log10(i[6]) < 5.5:
                 new_images.append(i[0])
                 zenith_values.append(i[1])
                 azimuth_values.append(i[2])
@@ -106,7 +102,7 @@ def get_values(check_zip,up):
                 status.append(i[5])
                 energy.append(i[6])
         if up ==2:
-            if i[4] < np.pi/2:
+            if np.log10(i[6]) >= 5.5:
                 new_images.append(i[0])
                 zenith_values.append(i[1])
                 azimuth_values.append(i[2])
@@ -130,8 +126,7 @@ def get_values(check_zip,up):
     return new_images,cos_values,cos_values_line,cos3_line,energy,status
 
 
-new_images_up,cos_values_up,cos_values_line_up,cos3_line_up,energy_up,status_up= get_values(check_zip,1)
-new_images_down,cos_values_down,cos_values_line_down,cos3_line_down,energy_down,status_down = get_values(check_zip,2)
+new_images,cos_values,cos_values_line,cos3_line,energy,status= get_values(check_zip,up)
 
 
 
@@ -150,16 +145,11 @@ def loss_space_angle(y_true,y_pred):
     loss = tf.math.reduce_mean(y)
     return loss
 
-cnn_model = load_model(cnn_up)
-model = load_model(model_up,custom_objects={'cnn_model':cnn_model})
-cos_values_pred_up = model.predict([new_images_up,cos_values_line_up,cos3_line_up])
+cnn_model = load_model(cnn)
+model = load_model(model,custom_objects={'cnn_model':cnn_model,'loss_space_angle'=loss_space_angle})
+cos_values_pred = model.predict([new_images,cos_values_line,cos3_line])
 
-cnn_model = load_model(cnn_down)
-model = load_model(model_down,custom_objects={'cnn_model':cnn_model})
-cos_values_pred_down = model.predict([new_images_down,cos_values_line_down,cos3_line_down])
-
-
-all_values = (cos_values_up,cos_values_down,cos_values_pred_up,cos_values_pred_down,energy_up,energy_down,status_up,status_down)
+all_values = (cos_values,cos_values_pred,energy,status)
 
 
 

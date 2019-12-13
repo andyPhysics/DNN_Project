@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(description='Process DNN')
 
 parser.add_argument('-a',
                     dest = 'activation',
-                    default='tanh',
+                    default='sigmoid',
                     help='Last layer activation')
 
 parser.add_argument('-o',
@@ -100,21 +100,21 @@ img_heights,img_rows = 60,86
 kernel = 3
 kernel2 = 2
 
-feature_number = 9
+feature_number = 7
 
 #------------------------------------------------------------------------------------------
 
 model1_input = Input(shape=(feature_number,img_heights,img_rows))
 
-model1 = ELU()(model1_input)
+model1 = LeakyReLU(alpha = 0.01)(model1_input)
 output1 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model1)
 model1 = SeparableConv2D(32,kernel,padding='same',kernel_regularizer=regularizers.l2(0.01),data_format='channels_first')(output1)
 
-model1 = ELU()(model1)
+model1 = LeakyReLU(alpha = 0.01)(model1)
 output2 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model1)
 model1 = SeparableConv2D(32,kernel,padding='same',kernel_regularizer=regularizers.l2(0.01),data_format='channels_first')(output2)
 
-model1 = ELU()(model1)
+model1 = LeakyReLU(alpha = 0.01)(model1)
 output3 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model1)
 model1 = SeparableConv2D(32,kernel,padding='same',kernel_regularizer=regularizers.l2(0.01),data_format='channels_first')(output3)
 
@@ -135,19 +135,24 @@ cos_values_line = Input(shape=(3,))
 
 output = Lambda(lambda x: cnn_model(x))(input_new)
 
-input_new_prime = Flatten()(input_new)
-
 model = Dropout(rate=args.do_rate)(output)
 model = Concatenate(axis=-1)([model,cos_values_line])
 model = Dense(256)(model)
-model = ELU()(model)
-model = Dropout(rate=args.do_rate)(model)
-model = Dense(128)(model)
-model = ELU()(model)
-model = Concatenate(axis=-1)([model, input_new_prime,cos_values_line])
+model = LeakyReLU(alpha = 0.01)(model)
 
+model1 = Dropout(rate=args.do_rate)(model)
+model1 = Concatenate(axis=-1)([model1,cos_values_line])
+model1 = Dense(256)(model1)
+model1 = LeakyReLU(alpha = 0.01)(model1)
 
-predictions = Dense(3,activation='linear')(model)
+model2 = Dropout(rate=args.do_rate)(model1)
+model2 = Concatenate(axis=-1)([model2,output,cos_values_line])
+model2 = Dense(256)(model2)
+model2 = LeakyReLU(alpha = 0.01)(model2)
+
+model = Concatenate(axis=-1)([model,model2,cos_values_line])
+
+predictions = Dense(3,activation=args.activation)(model)
 
 model = Model(inputs=[input_new,cos_values_line],outputs=predictions)
 model.compile(optimizer=opt , loss = loss_space_angle)

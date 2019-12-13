@@ -9,7 +9,7 @@ def load_files(batch):
         x = np.load(i,allow_pickle=True,encoding='latin1')['arr_0'].item()
         keys = x.keys()
         for key in keys:
-            images.append(x[key][0])
+            images.append(x[key][0][0:7])
             labels.append(x[key][1])
     return np.array(images),np.array(labels)
 
@@ -53,8 +53,10 @@ class Data_generator(Sequence):
     def __init__(self,directory,batch_size,activation_function='sigmoid',percent=1.0,shuffle=False,first_iter=False,augmentations=None,up = 0):
         y = os.listdir(directory)
         self.files = []
+        import random
         for i in y:
-            self.files.append(directory+i)
+            if random.uniform(0,1) < percent:
+                self.files.append(directory+i)
         self.files = np.array(self.files)
         self.batch_size = batch_size
         self.files_split = np.array_split(self.files,np.ceil(len(self.files)/self.batch_size))
@@ -141,6 +143,7 @@ class Data_generator(Sequence):
         if self.up == 0:
             check = list(zip(zenith_values,azimuth_values,line_fit_az,line_fit_zen,images,line_fit_stat))
             new_values = []
+            new_check = []
             for i in check:
                 new_values.append(i)
                
