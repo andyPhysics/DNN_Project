@@ -1,5 +1,5 @@
 # file name: job.condor
-Executable = /home/amedina/DNN_Project/create_images.py
+Executable = /home/amedina/DNN_Project.git/trunk/script/Images_manager/image_processing.py
 
 output = create_images.out
 error = create_images.err
@@ -8,6 +8,8 @@ notification = never
 
 # use the current metaproject environment
 getenv = True
+
+request_cpus = 5
 
 arguments = $(Item)
 

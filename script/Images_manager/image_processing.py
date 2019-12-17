@@ -7,41 +7,45 @@ from I3Hexagon import I3Hexagon
 from create_images import *
 import h5py
 
+input1 = sys.argv[1]
+input2 = sys.argv[2]
 file_path = '/data/user/amedina/DNN/'
-y = os.listdir(file_path+'images')
-file_names = []
-for i in y:
-    file_name,file_extension = os.path.splitext(i)
-    file_names.append(file_name)
+
+file_names = [input1]
+
 
 image_files = []
 label_files= []
 
 for i in file_names:
-    image_files.append(file_path+'images/'+i+'.hdf5')
+    image_files.append(file_path+'data/'+i+'.hdf5')
     label_files.append(file_path+'labels/'+i+'_labels.hdf5')
 
-number = range(len(image_files))
-
+number = [int(input2)]
 data_files = list(zip(image_files,label_files,number))
 
-def image_processing(i):
-    list_of_images = {}
-    print(i[0],i[1])
-    file1 = pd.read_hdf(i[0])
-    file2 = pd.read_hdf(i[1])
-    x = list(set(zip(*list(file1.index))[0]))
-    for j in x:
-        list_of_images[j] = [entire_image_simple(file1,j),np.array(file2.loc[int(filter(str.isdigit, j))-1])]
-    np.save(file_path+'processed_simple/'+'images_%s.npy'%(i[2]),list_of_images)
+list_of_images = {}
+print(image_files[0],label_files[0])
+file1 = pd.read_hdf(image_files[0])
+file2 = pd.read_hdf(label_files[0])
+x = []
+y = set(list(zip(*list(file1.index)))[0])
+for i in y:
+    x.append(i)
+
+def make_files(j):
+    j1 = j.split(" ")[-1]
+    results = [j, np.array([entire_image_3D(file1,j),np.array(file2.loc[int(j1)-1])])]
+    return results
 
 import multiprocessing
 from multiprocessing import Pool
 
-if __name__ == '__main__':
-    pool = Pool(multiprocessing.cpu_count())                         
-    pool.map(image_processing, data_files) 
-       
+pool = Pool(multiprocessing.cpu_count())                         
+values = pool.map(make_files,x) 
+for i in values:
+    list_of_images[i[0]] = i[1]
+np.savez('/data/user/amedina/'+'processed_simple/'+'images_%s.npz'%(number[0]),list_of_images)
 
 
 
