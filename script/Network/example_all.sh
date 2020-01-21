@@ -5,7 +5,7 @@ error = all.err
 log = all.log
 notification = never
 request_cpus = 4
-request_memory = 8000
+request_memory = 4000
 
 #arguments = $(Item)
 Requirements = has_avx =?= true

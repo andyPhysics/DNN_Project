@@ -11,7 +11,7 @@ import keras
 from keras import initializers
 from keras.models import Sequential,load_model, Model
 from keras.layers import Dense, Dropout, Flatten, Input, concatenate, Concatenate, Lambda, ELU
-from keras.layers import SeparableConv2D, MaxPooling2D, GaussianNoise
+from keras.layers import MaxPooling2D, GaussianNoise, SeparableConv2D
 from sklearn.model_selection import train_test_split
 from keras.layers import LeakyReLU
 from keras import regularizers
@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(description='Process DNN')
 
 parser.add_argument('-a',
                     dest = 'activation',
-                    default='sigmoid',
+                    default='linear',
                     help='Last layer activation')
 
 parser.add_argument('-o',
@@ -64,8 +64,8 @@ parser.add_argument('-zen',
 
 args = parser.parse_args()
 
-file_path_test = '/data/user/amedina/DNN/processed_simple/test/'
-file_path_train = '/data/user/amedina/DNN/processed_simple/train/'
+file_path_test = '/data/user/amedina/DNN/processed_2D/test/'
+file_path_train = '/data/user/amedina/DNN/processed_2D/train/'
 filter_zen = int(args.filter_zen)
 
 def loss_space_angle(y_true,y_pred):
@@ -91,39 +91,42 @@ early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
 #                                             save_weights_only=False,
 #                                             mode='auto')
 
-#opt = keras.optimizers.Adamax(lr=3e-4,beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5)
+#opt = keras.optimizers.Adam(lr=3e-4,beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5)
 opt = keras.optimizers.RMSprop(decay=1e-5)
 
 
 img_heights,img_rows = 60,86
 
-kernel = 3
+kernel = 5
 kernel2 = 2
 
-feature_number = 7
+feature_number = 9
 
 #------------------------------------------------------------------------------------------
-
 model1_input = Input(shape=(feature_number,img_heights,img_rows))
 
-model1 = LeakyReLU(alpha = 0.01)(model1_input)
+model = LeakyReLU(alpha = 0.01)(model1_input)
+output = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model)
+model = SeparableConv2D(32,kernel,padding='same',data_format='channels_first')(output)
+
+model1 = LeakyReLU(alpha = 0.01)(model)
 output1 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model1)
-model1 = SeparableConv2D(32,kernel,padding='same',kernel_regularizer=regularizers.l2(0.01),data_format='channels_first')(output1)
+model1 = SeparableConv2D(32,kernel,padding='same',data_format='channels_first')(output1)
 
-model1 = LeakyReLU(alpha = 0.01)(model1)
-output2 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model1)
-model1 = SeparableConv2D(32,kernel,padding='same',kernel_regularizer=regularizers.l2(0.01),data_format='channels_first')(output2)
+model2 = LeakyReLU(alpha = 0.01)(model1)
+output2 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model2)
+model2 = SeparableConv2D(32,kernel,padding='same',data_format='channels_first')(output2)
 
-model1 = LeakyReLU(alpha = 0.01)(model1)
-output3 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model1)
-model1 = SeparableConv2D(32,kernel,padding='same',kernel_regularizer=regularizers.l2(0.01),data_format='channels_first')(output3)
 
-cnn_model1 = Flatten()(model1_input)
-cnn_model2 = Flatten()(model1)
-cnn_model3 = Flatten()(output1)
-cnn_model4 = Flatten()(output2)
-cnn_model5 = Flatten()(output3)
+cnn_model1 = Flatten()(output)
+cnn_model2 = Flatten()(output1)
+cnn_model3 = Flatten()(output2)
+cnn_model4 = Flatten()(model2)
+cnn_model5 = Flatten()(model1_input)
+
 cnn_model = Concatenate(axis=-1)([cnn_model1,cnn_model2,cnn_model3,cnn_model4,cnn_model5])
+
+cnn_model = Flatten()(model)
 
 cnn_model = Model(inputs=model1_input,outputs=cnn_model)
 cnn_model.compile(optimizer=opt , loss = loss_space_angle)
@@ -131,37 +134,37 @@ cnn_model.compile(optimizer=opt , loss = loss_space_angle)
 #---------------------------------------------------------------------------------------------
 
 input_new = Input(shape=(feature_number,img_heights,img_rows))
+
 cos_values_line = Input(shape=(3,))
 
 output = Lambda(lambda x: cnn_model(x))(input_new)
 
-model = Dropout(rate=args.do_rate)(output)
-model = Concatenate(axis=-1)([model,cos_values_line])
-model = Dense(256)(model)
-model = LeakyReLU(alpha = 0.01)(model)
-
-model1 = Dropout(rate=args.do_rate)(model)
-model1 = Concatenate(axis=-1)([model1,cos_values_line])
-model1 = Dense(256)(model1)
+model1 = Dense(32)(output)
 model1 = LeakyReLU(alpha = 0.01)(model1)
 
-model2 = Dropout(rate=args.do_rate)(model1)
-model2 = Concatenate(axis=-1)([model2,output,cos_values_line])
-model2 = Dense(256)(model2)
+model1 = Dropout(args.do_rate)(model1)
+
+model2 = Dense(16)(model1)
 model2 = LeakyReLU(alpha = 0.01)(model2)
 
-model = Concatenate(axis=-1)([model,model2,cos_values_line])
+model3 = Concatenate(axis=-1)([model1,model2])
 
-predictions = Dense(3,activation=args.activation)(model)
+model3 = Dropout(args.do_rate)(model1)
+
+model3 = Concatenate(axis=-1)([cos_values_line,model1,output])
+
+predictions = Dense(3,activation=args.activation)(model3)
 
 model = Model(inputs=[input_new,cos_values_line],outputs=predictions)
+
 model.compile(optimizer=opt , loss = loss_space_angle)
+
+print(model.summary())
 
 history = model.fit_generator(Data_generator(file_path_train,2,activation_function=args.activation,first_iter=first_iter,percent=Percent_files,up=filter_zen),
                               epochs = epochs,
                               validation_data=Data_generator(file_path_test,4,activation_function=args.activation,up=filter_zen),
                               workers = num_cpus,
-                              #callbacks=[best_model],
                               use_multiprocessing = False)
 
 training = zip(history.history['loss'],history.history['val_loss'])

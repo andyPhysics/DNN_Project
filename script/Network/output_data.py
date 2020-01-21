@@ -10,7 +10,7 @@ def load_files(batch):
         x = np.load(i,allow_pickle=True)['arr_0'].item()
         keys = x.keys()
         for key in keys:
-            images.append([x[key][0][0]])
+            images.append(x[key][0][3:7])
             labels.append(x[key][1])
     return np.array(images),np.array(labels)
 
@@ -50,11 +50,11 @@ def get_cos_values(zenith,azimuth,activation):
     return np.array(cos1),np.array(cos2),np.array(cos3)
 
 
-cnn = '/data/user/amedina/cnn_model_high.h5'
-model = '/data/user/amedina/model_high.h5'
+cnn = '/home/amedina/DNN_Project.git/trunk/script/Network/cnn_model.h5'
+model = '/home/amedina/DNN_Project.git/trunk/script/Network/model.h5'
 
 output_file = 'output_high'
-up = 2
+up = 0
 
 file_path = '/data/user/amedina/DNN/processed_simple/validation/'
 y = os.listdir(file_path)
@@ -93,7 +93,7 @@ def get_values(check_zip,up):
             status.append(i[5])
             energy.append(i[6])
         if up ==1:
-            if np.log10(i[6]) < 5.5:
+            if np.log10(i[6]) < 5:
                 new_images.append(i[0])
                 zenith_values.append(i[1])
                 azimuth_values.append(i[2])
@@ -102,7 +102,7 @@ def get_values(check_zip,up):
                 status.append(i[5])
                 energy.append(i[6])
         if up ==2:
-            if np.log10(i[6]) >= 5.5:
+            if np.log10(i[6]) >= 5:
                 new_images.append(i[0])
                 zenith_values.append(i[1])
                 azimuth_values.append(i[2])
@@ -121,12 +121,12 @@ def get_values(check_zip,up):
     cos1_line,cos2_line,cos3_line = get_cos_values(line_fit_zen,line_fit_az,'tanh')
     cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values,'tanh')
     cos_values = np.array(list(zip(cos1,cos2,cos3)))
-    cos_values_line = np.array(list(zip(cos1_line,cos2_line)))
+    cos_values_line = np.array(list(zip(cos1_line,cos2_line,cos3_line)))
 
-    return new_images,cos_values,cos_values_line,cos3_line,energy,status
+    return new_images,cos_values,cos_values_line,energy,status
 
 
-new_images,cos_values,cos_values_line,cos3_line,energy,status= get_values(check_zip,up)
+new_images,cos_values,cos_values_line,energy,status= get_values(check_zip,up)
 
 
 
@@ -145,11 +145,11 @@ def loss_space_angle(y_true,y_pred):
     loss = tf.math.reduce_mean(y)
     return loss
 
-cnn_model = load_model(cnn)
-model = load_model(model,custom_objects={'cnn_model':cnn_model,'loss_space_angle'=loss_space_angle})
-cos_values_pred = model.predict([new_images,cos_values_line,cos3_line])
+cnn_model = load_model(cnn,custom_objects={'loss_space_angle':loss_space_angle})
+model = load_model(model,custom_objects={'cnn_model':cnn_model,'loss_space_angle':loss_space_angle})
+cos_values_pred = model.predict([new_images,cos_values_line])
 
-all_values = (cos_values,cos_values_pred,energy,status)
+all_values = {'cos_values':cos_values,'cos_values_pred':cos_values_pred,'energy':energy,'status':status}
 
 
 
