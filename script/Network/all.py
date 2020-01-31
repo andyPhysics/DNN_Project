@@ -20,7 +20,7 @@ import argparse
 
 
 num_cpus = 3
-epochs=30
+epochs=100
 Percent_files = 1.0
 first_iter = False
 
@@ -56,17 +56,17 @@ parser.add_argument('-do',
                     default=0.5,
                     help='This is the dropout rate')
 
-parser.add_argument('-zen',
-                    dest='filter_zen',
+parser.add_argument('-energy',
+                    dest='filter_energy',
                     default=0,
-                    help='Filter zen:0 is all, 1 is up, 2 is down')
+                    help='Filter Energy:0 is all, 1 is below 10^5, 2 is above 10^5')
 
 
 args = parser.parse_args()
 
 file_path_test = '/data/user/amedina/DNN/processed_2D/test/'
 file_path_train = '/data/user/amedina/DNN/processed_2D/train/'
-filter_zen = int(args.filter_zen)
+filter_energy = int(args.filter_energy)
 
 def loss_space_angle(y_true,y_pred):
     if args.activation=='sigmoid':
@@ -117,7 +117,6 @@ model2 = LeakyReLU(alpha = 0.01)(model1)
 output2 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model2)
 model2 = SeparableConv2D(32,kernel,padding='same',data_format='channels_first')(output2)
 
-
 cnn_model1 = Flatten()(output)
 cnn_model2 = Flatten()(output1)
 cnn_model3 = Flatten()(output2)
@@ -125,8 +124,6 @@ cnn_model4 = Flatten()(model2)
 cnn_model5 = Flatten()(model1_input)
 
 cnn_model = Concatenate(axis=-1)([cnn_model1,cnn_model2,cnn_model3,cnn_model4,cnn_model5])
-
-cnn_model = Flatten()(model)
 
 cnn_model = Model(inputs=model1_input,outputs=cnn_model)
 cnn_model.compile(optimizer=opt , loss = loss_space_angle)
@@ -139,7 +136,9 @@ cos_values_line = Input(shape=(3,))
 
 output = Lambda(lambda x: cnn_model(x))(input_new)
 
-model1 = Dense(32)(output)
+model1 = Dropout(args.do_rate)(output)
+
+model1 = Dense(32)(model1)
 model1 = LeakyReLU(alpha = 0.01)(model1)
 
 model1 = Dropout(args.do_rate)(model1)
@@ -147,11 +146,9 @@ model1 = Dropout(args.do_rate)(model1)
 model2 = Dense(16)(model1)
 model2 = LeakyReLU(alpha = 0.01)(model2)
 
-model3 = Concatenate(axis=-1)([model1,model2])
+model3 = Dropout(args.do_rate)(model2)
 
-model3 = Dropout(args.do_rate)(model1)
-
-model3 = Concatenate(axis=-1)([cos_values_line,model1,output])
+model3 = Concatenate(axis=-1)([model3,output,cos_values_line])
 
 predictions = Dense(3,activation=args.activation)(model3)
 
@@ -161,9 +158,9 @@ model.compile(optimizer=opt , loss = loss_space_angle)
 
 print(model.summary())
 
-history = model.fit_generator(Data_generator(file_path_train,2,activation_function=args.activation,first_iter=first_iter,percent=Percent_files,up=filter_zen),
+history = model.fit_generator(Data_generator(file_path_train,2,activation_function=args.activation,first_iter=first_iter,percent=Percent_files,up=filter_energy),
                               epochs = epochs,
-                              validation_data=Data_generator(file_path_test,4,activation_function=args.activation,up=filter_zen),
+                              validation_data=Data_generator(file_path_test,4,activation_function=args.activation,up=filter_energy),
                               workers = num_cpus,
                               use_multiprocessing = False)
 
