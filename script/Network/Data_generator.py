@@ -34,7 +34,8 @@ def get_cos_values(zenith,azimuth,activation):
     cos1 = []
     cos2 = []
     cos3 = []
-    if activation == 'sigmoid':
+    check = ['linear']
+    if activation in check:
         for i,j in zip(zenith,azimuth):
             cos1.append((np.sin(i) * np.cos(j)+1.0)/2.0)
             cos2.append((np.sin(i) * np.sin(j)+1.0)/2.0)
