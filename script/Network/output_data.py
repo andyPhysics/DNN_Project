@@ -10,7 +10,7 @@ def load_files(batch):
         x = np.load(i,allow_pickle=True)['arr_0'].item()
         keys = x.keys()
         for key in keys:
-            images.append(x[key][0][3:7])
+            images.append(x[key][0])
             labels.append(x[key][1])
     return np.array(images),np.array(labels)
 
@@ -36,27 +36,24 @@ def get_cos_values(zenith,azimuth,activation):
     cos1 = []
     cos2 = []
     cos3 = []
-    if activation == 'tanh':
-        for i,j in zip(zenith,azimuth):
-            cos1.append(np.sin(i) * np.cos(j))
-            cos2.append(np.sin(i) * np.sin(j))
-            cos3.append(np.cos(i))
-    elif activation == 'sigmoid':
-        for i,j in zip(zenith,azimuth):
-            cos1.append((np.sin(i) * np.cos(j)+1.0)/2.0)
-            cos2.append((np.sin(i) * np.sin(j)+1.0)/2.0)
-            cos3.append((np.cos(i)+1.0)/2.0)
-
+    for i,j in zip(zenith,azimuth):
+        cos1.append(np.sin(i) * np.cos(j))
+        cos2.append(np.sin(i) * np.sin(j))
+        cos3.append(np.cos(i))
+#        cos1.append((np.sin(i) * np.cos(j)+1.0)/2.0)
+#        cos2.append((np.sin(i) * np.sin(j)+1.0)/2.0)
+#        cos3.append((np.cos(i)+1.0)/2.0)
+    
     return np.array(cos1),np.array(cos2),np.array(cos3)
 
 
-cnn = '/home/amedina/DNN_Project.git/trunk/script/Network/cnn_model.h5'
-model = '/home/amedina/DNN_Project.git/trunk/script/Network/model.h5'
+#cnn = '/home/amedina/DNN_Project.git/trunk/script/Network/cnn_model.h5'
+model = '/home/amedina/DNN_Project.git/trunk/script/Network/model_best.h5'
 
-output_file = 'output_high'
+output_file = 'output'
 up = 0
 
-file_path = '/data/user/amedina/DNN/processed_simple/validation/'
+file_path = '/data/user/amedina/DNN/processed_2D/validation/'
 y = os.listdir(file_path)
 file_names = []
 
@@ -118,36 +115,33 @@ def get_values(check_zip,up):
     energy = np.array(energy)
     status = np.array(status)
 
-    cos1_line,cos2_line,cos3_line = get_cos_values(line_fit_zen,line_fit_az,'tanh')
-    cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values,'tanh')
+    cos1_line,cos2_line,cos3_line = get_cos_values(line_fit_zen,line_fit_az,'linear')
+    cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values,'linear')
     cos_values = np.array(list(zip(cos1,cos2,cos3)))
     cos_values_line = np.array(list(zip(cos1_line,cos2_line,cos3_line)))
 
-    return new_images,cos_values,cos_values_line,energy,status
+    return new_images,cos_values,cos1_line,cos2_line,cos3_line,energy,status
 
+new_images,cos_values,cos1_line,cos2_line,cos3_line,energy,status= get_values(check_zip,up)
 
-new_images,cos_values,cos_values_line,energy,status= get_values(check_zip,up)
+activation = 'linear'
 
+def loss_space_angle(y_true,y_pred):
+    #y_true1 = y_true*2.0-1.0
+    #y_pred1 = y_pred*2.0-1.0
+    y_true1 = y_true
+    y_pred1 = y_pred
+    y = tf.math.squared_difference(y_true1,y_pred1)
+    loss = tf.math.reduce_mean(y)
+    return loss
 
 
 from keras.models import load_model
 import tensorflow as tf
 from keras import backend as K
 
-def predict_images(model_name,images,cos_values_line,cos3_line):
-    model = load_model(model_name)
-    predicted_cos_values = model.predict([images,cos_values_line,cos3_line])
-    return predicted_cos_values
-
-def loss_space_angle(y_true,y_pred):
-    subtraction = tf.math.subtract(y_true,y_pred)
-    y = tf.matrix_diag_part(K.dot(subtraction,K.transpose(subtraction)))
-    loss = tf.math.reduce_mean(y)
-    return loss
-
-cnn_model = load_model(cnn,custom_objects={'loss_space_angle':loss_space_angle})
-model = load_model(model,custom_objects={'cnn_model':cnn_model,'loss_space_angle':loss_space_angle})
-cos_values_pred = model.predict([new_images,cos_values_line])
+model = load_model(model,custom_objects={'loss_space_angle':loss_space_angle})
+cos_values_pred = model.predict([new_images,cos1_line,cos2_line,cos3_line])
 
 all_values = {'cos_values':cos_values,'cos_values_pred':cos_values_pred,'energy':energy,'status':status}
 

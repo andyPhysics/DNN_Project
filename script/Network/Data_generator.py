@@ -9,7 +9,9 @@ def load_files(batch):
         x = np.load(i,allow_pickle=True,encoding='latin1')['arr_0'].item()
         keys = x.keys()
         for key in keys:
-            images.append(x[key][0])
+            values = np.array(x[key][0])
+            image = np.absolute(np.log10(values))
+            images.append(image)
             labels.append(x[key][1])
     return np.array(images),np.array(labels)
 
@@ -35,17 +37,14 @@ def get_cos_values(zenith,azimuth,activation):
     cos2 = []
     cos3 = []
     check = ['linear']
-    if activation in check:
-        for i,j in zip(zenith,azimuth):
-            cos1.append((np.sin(i) * np.cos(j)+1.0)/2.0)
-            cos2.append((np.sin(i) * np.sin(j)+1.0)/2.0)
-            cos3.append((np.cos(i)+1.0)/2.0)
-    else:
-        for i,j in zip(zenith,azimuth):
-            cos1.append(np.sin(i) * np.cos(j))
-            cos2.append(np.sin(i) * np.sin(j))
-            cos3.append(np.cos(i))
-
+    for i,j in zip(zenith,azimuth):
+#        cos1.append((np.sin(i) * np.cos(j)+1.0)/2.0)
+#        cos2.append((np.sin(i) * np.sin(j)+1.0)/2.0)
+#        cos3.append((np.cos(i)+1.0)/2.0)
+        cos1.append(np.sin(i) * np.cos(j))
+        cos2.append(np.sin(i) * np.sin(j))
+        cos3.append(np.cos(i))
+    
     return np.array(cos1),np.array(cos2),np.array(cos3)
 
 
@@ -167,7 +166,7 @@ class Data_generator(Sequence):
         cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values,self.activation_function)
         cos_values = np.array(list(zip(cos1,cos2,cos3)))
         cos_values_line = np.array(list(zip(cos1_line,cos2_line,cos3_line)))
-        return [images,cos_values_line],cos_values
+        return [images,cos1_line,cos2_line,cos3_line],[cos1,cos2,cos3]
         
         
         

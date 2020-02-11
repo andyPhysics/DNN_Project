@@ -33,22 +33,22 @@ parser.add_argument('-a',
 
 parser.add_argument('-o',
                     dest='output_file',
-                    default='/data/user/amedina/model.h5',
+                    default='model.h5',
                     help='This is the output model at the end of training(.h5)')
 
 parser.add_argument('-b',
                     dest='output_best',
-                    default='/data/user/amedina/model_best.h5',
+                    default='model_best.h5',
                     help='This is the best output model(.h5)')
 
 parser.add_argument('-c',
                     dest='cnn_model',
-                    default='/data/user/amedina/cnn_model.h5',
+                    default='cnn_model.h5',
                     help='This is the output of the CNN model(.h5)')
 
 parser.add_argument('-t',
                     dest='training_output',
-                    default='/data/user/amedina/training_curve.csv',
+                    default='training_curve',
                     help='This is the output file with the training curve(.csv)')
 
 parser.add_argument('-do',
@@ -68,18 +68,12 @@ file_path_test = '/data/user/amedina/DNN/processed_2D/test/'
 file_path_train = '/data/user/amedina/DNN/processed_2D/train/'
 filter_energy = int(args.filter_energy)
 
-check = ['sigmoid']
-
 def loss_space_angle(y_true,y_pred):
-    if args.activation in check:
-        y_true1 = y_true*2.0-1.0                     
-        y_pred1 = y_pred*2.0-1.0
-    else:
-        y_true1 = y_true
-        y_pred1 = y_pred
-    subtraction = tf.math.subtract(y_true1,y_pred1)
-    y = tf.matrix_diag_part(K.dot(subtraction,K.transpose(subtraction)))
+    y_true1 = y_true
+    y_pred1 = y_pred
+    
     loss = tf.math.reduce_mean(y)
+
     return loss
 
 early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
@@ -94,8 +88,8 @@ best_model = keras.callbacks.ModelCheckpoint(args.output_best,
                                              mode='auto')
 
 #opt = keras.optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-#opt = keras.optimizers.Adam(lr=1e-4,beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5)
-opt = keras.optimizers.RMSprop(decay=1e-5)
+opt = keras.optimizers.Adam(lr=1e-4,beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5)
+#opt = keras.optimizers.RMSprop(decay=1e-5)
 
 img_heights,img_rows = 60,86
 
@@ -105,7 +99,6 @@ kernel2 = 2
 feature_number = 9
 
 #------------------------------------------------------------------------------------------
-#model1_input = Input(shape=(feature_number,img_heights,img_rows))
 
 input_new = Input(shape=(feature_number,img_heights,img_rows))
 
@@ -114,47 +107,50 @@ model = ELU()(model)
 output = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model)
 model = SeparableConv2D(32,kernel,padding='same',data_format='channels_first')(output)
 
-#model1 = LeakyReLU(alpha = 0.01)(model)
 model1 = ELU()(model)
 output1 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model1)
 model1 = SeparableConv2D(32,kernel,padding='same',data_format='channels_first')(output1)
 
-#model2 = LeakyReLU(alpha = 0.01)(model1)
 model2 = ELU()(model1)
 output2 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model2)
 model2 = SeparableConv2D(32,kernel,padding='same',data_format='channels_first')(output2)
+
 model2 = ELU()(model2)
 
 cnn_model = Flatten()(model2)
 
-#cnn_model = Model(inputs=model1_input,outputs=cnn_model)
-#cnn_model.compile(optimizer=opt , loss = loss_space_angle)
+cnn_model1 = Flatten()(output)
+cnn_model2 = Flatten()(output1)
 
-#---------------------------------------------------------------------------------------------
+cnn_model = Concatenate(axis=-1)([cnn_model,cnn_model1,cnn_model2])
 
-#input_new = Input(shape=(feature_number,img_heights,img_rows))
+#------------------------------------
+cosline1 = Input(shape=(1,))
+cosline2 = Input(shape=(1,))
+cosline3 = Input(shape=(1,))
 
-cos_values_line = Input(shape=(3,))
+#------------------------------------
 
-#output = Lambda(lambda x: cnn_model(x))(input_new)
+def output_DNN(cnn_model1,cos_values_line):
+    model3 = Dense(32)(cnn_model1)
+    output3 = ELU()(model3)
 
-model3 = Dropout(args.do_rate)(cnn_model)
+    model3 = Dropout(args.do_rate)(output3)
 
-model3 = Dense(32)(model3)
-output3 = ELU()(model3)
-#output1 = LeakyReLU(alpha = 0.01)(model1)
+    model4 = Dense(16)(model3)
+    output4 = ELU()(model4)
 
-model3 = Dropout(args.do_rate)(output3)
+    model5 = Concatenate(axis=-1)([output3,output4,cos_values_line])
 
-model4 = Dense(16)(model3)
-output4 = ELU()(model4)
-#output2 = LeakyReLU(alpha = 0.01)(model2)
+    predictions = Dense(1,activation=args.activation)(model5)
+    
+    return predictions
 
-model5 = Dropout(args.do_rate)(output4)
+pred1 = output_DNN(cnn_model,cosline1)
+pred2 = output_DNN(cnn_model,cosline2)
+pred3 = output_DNN(cnn_model,cosline3)
 
-predictions = Dense(3,activation=args.activation)(model5)
-
-model = Model(inputs=[input_new,cos_values_line],outputs=predictions)
+model = Model(inputs=[input_new,cosline1,cosline2,cosline3],outputs=[pred1,pred2,pred3])
 
 model.compile(optimizer=opt , loss = 'mse')
 
@@ -170,6 +166,5 @@ history = model.fit_generator(Data_generator(file_path_train,2,activation_functi
 training = zip(history.history['loss'],history.history['val_loss'])
 
 
-#cnn_model.save(args.cnn_model)
 model.save(args.output_file)
 np.save(args.training_output,training)

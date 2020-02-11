@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(description='Process DNN')
 
 parser.add_argument('-a',
                     dest = 'activation',
-                    default='sigmoid',
+                    default='linear',
                     help='Last layer activation')
 
 parser.add_argument('-o',
@@ -36,10 +36,16 @@ parser.add_argument('-o',
                     default='model_all_extended.h5',
                     help='This is the output model at the end of training(.h5)')
 
-parser.add_argument('-c',
-                    dest='cnn_model',
-                    default='cnn_model_all.h5',
-                    help='This is the output of the CNN model(.h5)')
+parser.add_argument('-m',
+                    dest='model',
+                    default='model_best.h5',
+                    help='This is the output of the previous model(.h5)')
+
+parser.add_argument('-n',
+                    dest='model_best',
+                    default='model_best_new.h5',
+                    help='This is the output of the model(.h5)')
+
 
 parser.add_argument('-t',
                     dest='training_output',
@@ -53,8 +59,8 @@ parser.add_argument('-do',
 
 args = parser.parse_args()
 
-file_path_test = '/data/user/amedina/DNN/processed_simple/test/'
-file_path_train = '/data/user/amedina/DNN/processed_simple/train/'
+file_path_test = '/data/user/amedina/DNN/processed_2D/test/'
+file_path_train = '/data/user/amedina/DNN/processed_2D/train/'
 
 
 def loss_space_angle(y_true,y_pred):
@@ -69,55 +75,39 @@ def loss_space_angle(y_true,y_pred):
     loss = tf.math.reduce_mean(y)
     return loss
 
+best_model = keras.callbacks.ModelCheckpoint(args.model_best,
+                                             monitor='val_loss',
+                                             save_best_only=True,
+                                             save_weights_only=False,
+                                             mode='auto')
+
+
 early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                               min_delta=0,
                               patience=10,
                               verbose=1, mode='auto')
 
-opt = keras.optimizers.Adamax(lr=3e-4,beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5)
+opt = keras.optimizers.RMSprop(decay=1e-5)
 
 img_heights,img_rows = 60,86
 
-kernel = 3
-kernel2 = 2
-
-feature_number = 9
-
 #------------------------------------------------------------------------------------------
 
-cnn_model = load_model(args.cnn_model,custom_objects = {'loss_space_angle':loss_space_angle})
-for n in cnn_model.layers[0:len(cnn_model.layers)-4]:
+model = load_model(args.model,custom_objects = {'loss_space_angle':loss_space_angle})
+for n in model.layers[0:10]:
+    print(n)
     n.trainable=False
 
-input_new = Input(shape=(feature_number,img_heights,img_rows))
-cos_values_line = Input(shape=(3,))
-
-output = Lambda(lambda x: cnn_model(x))(input_new)
-
-model = Dropout(rate=args.do_rate)(output)
-model = Concatenate(axis=-1)([model,cos_values_line])
-model = Dense(512)(model)
-model = ELU()(model)
-model = Dropout(rate=args.do_rate)(model)
-model = Dense(512)(model)
-model = ELU()(model)
-
-input_new_prime = Flatten()(input_new)
-model = Concatenate(axis=-1)([model, input_new_prime])
-
-predictions = Dense(3,activation=args.activation)(model)
-
-model = Model(inputs=[input_new,cos_values_line],outputs=predictions)
 model.compile(optimizer=opt , loss = loss_space_angle)
 
 history = model.fit_generator(Data_generator(file_path_train,2,activation_function=args.activation,first_iter=first_iter,percent=Percent_files),
                               epochs = epochs,
                               validation_data=Data_generator(file_path_test,4,activation_function=args.activation),
                               workers = num_cpus,
+                              callbacks = [best_model,early_stop],
                               use_multiprocessing = False)
 
 training = zip(history.history['loss'],history.history['val_loss'])
 
-cnn_model.save('cnn_model_all_extend.h5')
 model.save(args.output_file)
 np.save(args.training_output,training)
