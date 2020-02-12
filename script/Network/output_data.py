@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import sys,os
 
+from Data_generator import get_cos_values
+
 def load_files(batch):
     images = []
     labels = []
@@ -30,21 +32,6 @@ def get_cuts(labels):
             feature_values.append(0)
     feature_values=np.array(feature_values)
     return feature_values
-
-
-def get_cos_values(zenith,azimuth,activation):
-    cos1 = []
-    cos2 = []
-    cos3 = []
-    for i,j in zip(zenith,azimuth):
-        cos1.append(np.sin(i) * np.cos(j))
-        cos2.append(np.sin(i) * np.sin(j))
-        cos3.append(np.cos(i))
-#        cos1.append((np.sin(i) * np.cos(j)+1.0)/2.0)
-#        cos2.append((np.sin(i) * np.sin(j)+1.0)/2.0)
-#        cos3.append((np.cos(i)+1.0)/2.0)
-    
-    return np.array(cos1),np.array(cos2),np.array(cos3)
 
 
 #cnn = '/home/amedina/DNN_Project.git/trunk/script/Network/cnn_model.h5'

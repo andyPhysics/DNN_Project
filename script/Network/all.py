@@ -21,14 +21,14 @@ import argparse
 
 num_cpus = 3
 epochs=100
-Percent_files = 0.1
+Percent_files = 1.0
 first_iter = False
 
 parser = argparse.ArgumentParser(description='Process DNN')
 
 parser.add_argument('-a',
                     dest = 'activation',
-                    default='linear',
+                    default='sigmoid',
                     help='Last layer activation')
 
 parser.add_argument('-o',
@@ -127,11 +127,11 @@ cnn_model = Concatenate(axis=-1)([cnn_model,cnn_model1,cnn_model2])
 #------------------------------------
 cosline1 = Input(shape=(1,))
 cosline2 = Input(shape=(1,))
-cosline3 = Input(shape=(1,))
+cosline3 = Input(shape=(2,))
 
 #------------------------------------
 
-def output_DNN(cnn_model1,cos_values_line):
+def output_DNN(cnn_model1,cos_values_line,activation,shape):
     model3 = Dense(32)(cnn_model1)
     output3 = ELU()(model3)
 
@@ -142,17 +142,19 @@ def output_DNN(cnn_model1,cos_values_line):
 
     model5 = Concatenate(axis=-1)([output3,output4,cos_values_line])
 
-    predictions = Dense(1,activation=args.activation)(model5)
+    predictions = Dense(shape,activation=activation)(model5)
     
     return predictions
 
-pred1 = output_DNN(cnn_model,cosline1)
-pred2 = output_DNN(cnn_model,cosline2)
-pred3 = output_DNN(cnn_model,cosline3)
+pred1 = output_DNN(cnn_model,cosline1,args.activation,1)
+pred2 = output_DNN(cnn_model,cosline2,args.activation,1)
+pred3 = output_DNN(cnn_model,cosline3,'softmax',2)
+
+
 
 model = Model(inputs=[input_new,cosline1,cosline2,cosline3],outputs=[pred1,pred2,pred3])
 
-model.compile(optimizer=opt , loss = 'mse')
+model.compile(optimizer=opt , loss = ['mse','mse','categorical_crossentropy'])
 
 print(model.summary())
 

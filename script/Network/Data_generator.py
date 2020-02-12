@@ -10,8 +10,7 @@ def load_files(batch):
         keys = x.keys()
         for key in keys:
             values = np.array(x[key][0])
-            image = np.absolute(np.log10(values))
-            images.append(image)
+            images.append(values)
             labels.append(x[key][1])
     return np.array(images),np.array(labels)
 
@@ -36,14 +35,14 @@ def get_cos_values(zenith,azimuth,activation):
     cos1 = []
     cos2 = []
     cos3 = []
-    check = ['linear']
     for i,j in zip(zenith,azimuth):
-#        cos1.append((np.sin(i) * np.cos(j)+1.0)/2.0)
-#        cos2.append((np.sin(i) * np.sin(j)+1.0)/2.0)
-#        cos3.append((np.cos(i)+1.0)/2.0)
-        cos1.append(np.sin(i) * np.cos(j))
-        cos2.append(np.sin(i) * np.sin(j))
-        cos3.append(np.cos(i))
+        cos1.append(i/np.pi)
+        if j < np.pi:
+            cos2.append(j/np.pi)
+            cos3.append([1,0])
+        elif j >= np.pi:
+            cos2.append((j-np.pi)/np.pi)
+            cos3.append([0,1])
     
     return np.array(cos1),np.array(cos2),np.array(cos3)
 
