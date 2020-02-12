@@ -11,7 +11,7 @@ import keras
 from keras import initializers
 from keras.models import Sequential,load_model, Model
 from keras.layers import Dense, Dropout, Flatten, Input, concatenate, Concatenate, Lambda, ELU
-from keras.layers import MaxPooling2D, GaussianNoise, SeparableConv2D, Conv2D
+from keras.layers import MaxPooling2D, GaussianNoise, SeparableConv2D, Conv2D, GlobalAveragePooling2D
 from sklearn.model_selection import train_test_split
 from keras.layers import LeakyReLU
 from keras import regularizers
@@ -88,8 +88,8 @@ best_model = keras.callbacks.ModelCheckpoint(args.output_best,
                                              mode='auto')
 
 #opt = keras.optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-opt = keras.optimizers.Adam(lr=1e-4,beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5)
-#opt = keras.optimizers.RMSprop(decay=1e-5)
+#opt = keras.optimizers.Adam(lr=1e-4,beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=1e-5)
+opt = keras.optimizers.RMSprop(decay=1e-5)
 
 img_heights,img_rows = 60,86
 
@@ -102,59 +102,51 @@ feature_number = 9
 
 input_new = Input(shape=(feature_number,img_heights,img_rows))
 
-model = SeparableConv2D(32,kernel,padding='same',data_format='channels_first')(input_new)
+model = SeparableConv2D(32,kernel,data_format='channels_first')(input_new)
 model = ELU()(model)
-output = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model)
-model = SeparableConv2D(32,kernel,padding='same',data_format='channels_first')(output)
 
-model1 = ELU()(model)
-output1 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model1)
-model1 = SeparableConv2D(32,kernel,padding='same',data_format='channels_first')(output1)
-
-model2 = ELU()(model1)
-output2 = MaxPooling2D(kernel2,padding='same',data_format='channels_first')(model2)
-model2 = SeparableConv2D(32,kernel,padding='same',data_format='channels_first')(output2)
-
+model2 = SeparableConv2D(64,kernel,data_format='channels_first')(model)
 model2 = ELU()(model2)
+model2 = MaxPooling2D(kernel2)(model2)
 
-cnn_model = Flatten()(model2)
+model3 = SeparableConv2D(64,kernel,data_format='channels_first')(model2)
+model3 = ELU()(model3)
+model3 = SeparableConv2D(128,kernel,data_format='channels_first')(model3)
+model3 = ELU()(model3)
+model3 = MaxPooling2D(kernel2)(model3)
 
-cnn_model1 = Flatten()(output)
-cnn_model2 = Flatten()(output1)
+model4 = SeparableConv2D(64,kernel,data_format='channels_first')(model3)
+model4 = ELU()(model4)
+model4 = SeparableConv2D(128,kernel,data_format='channels_first')(model4)
+model4 = ELU()(model4)
 
-cnn_model = Concatenate(axis=-1)([cnn_model,cnn_model1,cnn_model2])
+cnn_model = GlobalAveragePooling2D()(model4)
+
+
 
 #------------------------------------
-cosline1 = Input(shape=(1,))
-cosline2 = Input(shape=(1,))
-cosline3 = Input(shape=(2,))
+def output_DNN(cnn_model1,activation,shape):
+    model5 = Dense(32)(cnn_model1)
+    output5 = ELU()(model5)
 
-#------------------------------------
+    model6 = Dropout(args.do_rate)(output5)
 
-def output_DNN(cnn_model1,cos_values_line,activation,shape):
-    model3 = Dense(32)(cnn_model1)
-    output3 = ELU()(model3)
+    model6 = Dense(16)(model6)
+    output6 = ELU()(model6)
 
-    model3 = Dropout(args.do_rate)(output3)
-
-    model4 = Dense(16)(model3)
-    output4 = ELU()(model4)
-
-    model5 = Concatenate(axis=-1)([output3,output4,cos_values_line])
-
-    predictions = Dense(shape,activation=activation)(model5)
+    predictions = Dense(shape,activation=activation)(output6)
     
     return predictions
 
-pred1 = output_DNN(cnn_model,cosline1,args.activation,1)
-pred2 = output_DNN(cnn_model,cosline2,args.activation,1)
-pred3 = output_DNN(cnn_model,cosline3,'softmax',2)
+pred1 = output_DNN(cnn_model,args.activation,1)
+pred2 = output_DNN(cnn_model,args.activation,1)
+pred3 = output_DNN(cnn_model,'sigmoid',1)
 
 
 
-model = Model(inputs=[input_new,cosline1,cosline2,cosline3],outputs=[pred1,pred2,pred3])
+model = Model(inputs=[input_new],outputs=[pred1,pred2,pred3])
 
-model.compile(optimizer=opt , loss = ['mse','mse','categorical_crossentropy'])
+model.compile(optimizer=opt , loss = ['mse','mse','binary_crossentropy'],metrics = ['mse','mse','acc'])
 
 print(model.summary())
 

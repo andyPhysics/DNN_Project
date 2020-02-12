@@ -35,7 +35,7 @@ def get_cuts(labels):
 
 
 #cnn = '/home/amedina/DNN_Project.git/trunk/script/Network/cnn_model.h5'
-model = '/home/amedina/DNN_Project.git/trunk/script/Network/model_best.h5'
+model = '/home/amedina/DNN_Project.git/trunk/script/Network/model.h5'
 
 output_file = 'output'
 up = 0

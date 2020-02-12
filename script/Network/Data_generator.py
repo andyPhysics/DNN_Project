@@ -39,10 +39,10 @@ def get_cos_values(zenith,azimuth,activation):
         cos1.append(i/np.pi)
         if j < np.pi:
             cos2.append(j/np.pi)
-            cos3.append([1,0])
+            cos3.append(0)
         elif j >= np.pi:
             cos2.append((j-np.pi)/np.pi)
-            cos3.append([0,1])
+            cos3.append(1)
     
     return np.array(cos1),np.array(cos2),np.array(cos3)
 
@@ -165,7 +165,7 @@ class Data_generator(Sequence):
         cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values,self.activation_function)
         cos_values = np.array(list(zip(cos1,cos2,cos3)))
         cos_values_line = np.array(list(zip(cos1_line,cos2_line,cos3_line)))
-        return [images,cos1_line,cos2_line,cos3_line],[cos1,cos2,cos3]
+        return [images],[cos1,cos2,cos3]
         
         
         
