@@ -11,7 +11,7 @@ import keras
 from keras import initializers
 from keras.models import Sequential,load_model, Model
 from keras.layers import Dense, Dropout, Flatten, Input, concatenate, Concatenate, Lambda, ELU
-from keras.layers import MaxPooling2D, GaussianNoise, SeparableConv2D, Conv2D, GlobalAveragePooling2D,ConvLSTM
+from keras.layers import MaxPooling2D, GaussianNoise, SeparableConv2D, Conv2D, GlobalAveragePooling2D,LSTM
 from sklearn.model_selection import train_test_split
 from keras.layers import LeakyReLU
 from keras import regularizers
@@ -96,13 +96,13 @@ img_heights,img_rows = 60,86
 kernel = 3
 kernel2 = 2
 
-feature_number = 9
+feature_number = 1
 
 #------------------------------------------------------------------------------------------
 
-input_new = Input(shape=(feature_number,img_heights,img_rows))
+input_new = Input(shape=(img_heights,img_rows))
 
-cnn_model = ConvLSTM(64,3,data_format = 'channels_first')(input_new)
+cnn_model = LSTM(64)(input_new)
 
 
 

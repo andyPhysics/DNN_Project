@@ -10,7 +10,7 @@ def load_files(batch):
         keys = x.keys()
         for key in keys:
             values = np.array(x[key][0])
-            images.append(values)
+            images.append(values[0])
             labels.append(x[key][1])
     return np.array(images),np.array(labels)
 
@@ -165,6 +165,7 @@ class Data_generator(Sequence):
         cos1,cos2,cos3 = get_cos_values(zenith_values,azimuth_values,self.activation_function)
         cos_values = np.array(list(zip(cos1,cos2,cos3)))
         cos_values_line = np.array(list(zip(cos1_line,cos2_line,cos3_line)))
+        
         return [images],[cos1,cos2,cos3]
         
         
