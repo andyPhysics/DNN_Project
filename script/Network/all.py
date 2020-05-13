@@ -11,7 +11,7 @@ import keras
 from keras import initializers
 from keras.models import Sequential,load_model, Model
 from keras.layers import Dense, Dropout, Flatten, Input, concatenate, Concatenate, Lambda, ELU
-from keras.layers import MaxPooling2D, GaussianNoise, SeparableConv2D, Conv2D, GlobalAveragePooling2D
+from keras.layers import MaxPooling2D, GaussianNoise, SeparableConv2D, Conv2D, GlobalAveragePooling2D,ConvLSTM
 from sklearn.model_selection import train_test_split
 from keras.layers import LeakyReLU
 from keras import regularizers
@@ -102,25 +102,7 @@ feature_number = 9
 
 input_new = Input(shape=(feature_number,img_heights,img_rows))
 
-model = SeparableConv2D(32,kernel,data_format='channels_first')(input_new)
-model = ELU()(model)
-
-model2 = SeparableConv2D(64,kernel,data_format='channels_first')(model)
-model2 = ELU()(model2)
-model2 = MaxPooling2D(kernel2)(model2)
-
-model3 = SeparableConv2D(64,kernel,data_format='channels_first')(model2)
-model3 = ELU()(model3)
-model3 = SeparableConv2D(128,kernel,data_format='channels_first')(model3)
-model3 = ELU()(model3)
-model3 = MaxPooling2D(kernel2)(model3)
-
-model4 = SeparableConv2D(64,kernel,data_format='channels_first')(model3)
-model4 = ELU()(model4)
-model4 = SeparableConv2D(128,kernel,data_format='channels_first')(model4)
-model4 = ELU()(model4)
-
-cnn_model = GlobalAveragePooling2D()(model4)
+cnn_model = ConvLSTM(64,3,data_format = 'channels_first')(input_new)
 
 
 
